@@ -455,7 +455,7 @@ export function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs uppercase tracking-[0.35em] text-white/45">Smart Suggestions</div>
-                <div className="text-lg font-black tracking-tight mt-1">Suggested Parts</div>
+                <div className="text-lg font-black tracking-tight mt-1">  Suggested Parts</div>
               </div>
               <div className="chip border-crimson/30 bg-crimson/10">
                 <Search className="w-4 h-4 text-crimson" />
