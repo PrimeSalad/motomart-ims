@@ -1,0 +1,48 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: ims_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: ims_db
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ims_backend
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    env_file:
+      - ./backend/.env.example
+    environment:
+      # Override MONGO_URI to use Docker DNS
+      MONGO_URI: mongodb://mongo:27017/ims_db
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ims_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    env_file:
+      - ./frontend/.env.example
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080/api
+    ports:
+      - "5173:5173"
+
+volumes:
+  mongo_data:

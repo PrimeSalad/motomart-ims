@@ -1,0 +1,81 @@
+/*
+ * Carbon & Crimson IMS
+ * File: src/styles/index.css
+ * Version: 1.0.0
+ * Purpose: Tailwind base + global styling.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(220, 38, 38, 0.5) rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(220, 38, 38, 0.45);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+@layer components {
+  .glass {
+    @apply border border-white/10 bg-white/[0.04] backdrop-blur-xl rounded-2xl;
+  }
+
+  .btn-mech {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
+    border border-white/10 bg-white/[0.04] hover:bg-white/[0.08]
+    active:translate-y-[1px] active:scale-[0.99] transition;
+  }
+
+  .btn-crimson {
+    @apply btn-mech border-crimson/30 bg-gradient-to-r from-crimson/60 to-black/30
+    hover:from-crimson/70 hover:to-black/20 shadow-redline;
+  }
+
+  .input-mech {
+    @apply w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm
+    outline-none focus:border-crimson/50 focus:ring-2 focus:ring-crimson/20 transition;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs;
+  }
+
+  .redline {
+    @apply shadow-redline border-crimson/40;
+  }
+
+  .emergency {
+    @apply redline relative overflow-hidden;
+  }
+
+  .emergency::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    background: radial-gradient(circle at 20% 20%, rgba(220,38,38,0.25), transparent 45%);
+    filter: blur(12px);
+    animation: pulse_red 1.25s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes pulse_red {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 0.85; }
+  }
+}
