@@ -44,5 +44,4 @@ async function motorcycles(req, res, next) {
     });
   }
 }
-
 module.exports = { motorcycles };

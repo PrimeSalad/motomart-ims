@@ -37,6 +37,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const api = useMemo(() => createApiClient({ token: null }), []);
 
+  
   const [form, setForm] = useState({ email: 'admin@ims.local', password: 'Admin#1234' });
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState(null);

@@ -231,5 +231,4 @@ async function resetPassword(req, res, next) {
     return next(new AppError('Server error.', 500, 'SERVER_ERROR'));
   }
 }
-
 module.exports = { login, changePassword, forgotPassword, resetPassword };
