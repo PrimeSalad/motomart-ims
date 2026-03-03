@@ -5,6 +5,7 @@
  * Purpose: Prevent blank screen by catching render errors.
  */
 
+
 import React from "react";
 
 export class ErrorBoundary extends React.Component {

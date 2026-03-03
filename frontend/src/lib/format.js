@@ -9,6 +9,8 @@
  * - Use plain ASCII text so PDF exports don't show garbled characters.
  */
 
+
+
 const NF_MONEY = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,

@@ -12,6 +12,7 @@
  *   2) normalizing text to a PDF-safe subset.
  */
 
+
 'use strict';
 
 import { formatPhp } from './format';
