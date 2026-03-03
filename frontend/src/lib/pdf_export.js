@@ -11,8 +11,6 @@
  *   1) formatting money using ASCII ("... pesos"), and
  *   2) normalizing text to a PDF-safe subset.
  */
-
-
 'use strict';
 
 import { formatPhp } from './format';
