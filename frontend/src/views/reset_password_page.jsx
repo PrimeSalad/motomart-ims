@@ -5,8 +5,6 @@
  * Purpose: Password reset screen (token from email link).
  */
 
-
-
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, ShieldCheck } from 'lucide-react';
