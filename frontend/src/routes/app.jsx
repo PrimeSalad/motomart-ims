@@ -4,9 +4,6 @@
  * Version: 1.0.1
  * Purpose: App router with protected routes.
  */
-
-
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
