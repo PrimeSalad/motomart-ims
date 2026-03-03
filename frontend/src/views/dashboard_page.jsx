@@ -7,8 +7,6 @@
  * Notes:
  * - This file intentionally stays small to avoid routing-level crashes.
  */
-
-
 import React from 'react';
 import { Dashboard } from '../widgets/dashboard';
 
