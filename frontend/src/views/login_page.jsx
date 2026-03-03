@@ -4,8 +4,6 @@
  * Version: 2.0.0 "Obsidian"
  * Refactor: God Mode - Ultra-premium UX, enhanced security, and fluid animations.
  */
-
-
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
