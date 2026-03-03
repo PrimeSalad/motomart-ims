@@ -4,8 +4,6 @@
  * Version: 1.0.0
  * Purpose: Protected routes using auth token.
  */
-
-
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../state/auth_context';
