@@ -12,13 +12,10 @@ const { User } = require('../models/user_model');
 const { signToken } = require('../services/jwt_service');
 const { sendMail } = require('../services/mailer_service');
 const { env } = require('../config/env');
-
 const BCRYPT_ROUNDS = 10;
-
 function safeLowerEmail(email) {
   return String(email || '').toLowerCase().trim();
 }
-
 function getUserPasswordHash(user) {
   // Support common field names
   const a = user?.password_hash;
