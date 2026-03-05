@@ -6,9 +6,7 @@
  */
 
 'use strict';
-
 const bcrypt = require('bcryptjs');
-
 const { AppError } = require('../utils/app_error');
 const { User } = require('../models/user_model');
 const { signToken } = require('../services/jwt_service');
