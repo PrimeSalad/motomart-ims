@@ -1,4 +1,4 @@
-# Carbon & Crimson IMS (Motorcycle & Gear Inventory Management System)
+# MOTOMART Inventory Management System
 
 Production-ready, high-performance Inventory Management System (IMS) with a "God Mode" UI theme: **Carbon & Crimson**.
 
@@ -15,18 +15,22 @@ Production-ready, high-performance Inventory Management System (IMS) with a "God
 ## One-command local deployment (Docker)
 
 ### Prerequisites
+
 - Docker Desktop (or Docker Engine + Compose)
 
 ### Run
+
 ```bash
 docker compose up --build
 ```
 
 Then open:
+
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:8080/api/health
 
 **Default seed users** (created on first boot):
+
 - Admin: `admin@ims.local` / `Admin#1234`
 - Staff: `staff@ims.local` / `Staff#1234`
 
@@ -37,6 +41,7 @@ Then open:
 ## Manual installation (without Docker)
 
 ### 1) Backend
+
 ```bash
 cd backend
 cp .env.example .env
@@ -47,6 +52,7 @@ npm run dev
 Backend runs at: http://localhost:8080
 
 ### 2) Frontend
+
 ```bash
 cd frontend
 cp .env.example .env
@@ -61,6 +67,7 @@ Frontend runs at: http://localhost:5173
 ## Environment variables
 
 ### Backend (`backend/.env`)
+
 - `MONGO_URI`: MongoDB connection string
 - `JWT_SECRET`: strong random string
 - `JWT_EXPIRES_IN`: e.g. `7d`
@@ -70,6 +77,7 @@ Frontend runs at: http://localhost:5173
 - `SEED_STAFF_EMAIL`, `SEED_STAFF_PASSWORD`
 
 ### Frontend (`frontend/.env`)
+
 - `VITE_API_BASE_URL`: e.g. `http://localhost:8080/api`
 
 ---
@@ -105,16 +113,18 @@ carbon-crimson-ims/
 ---
 
 ## License
-MIT
 
+MIT
 
 ## Run without Docker (Recommended for local dev)
 
 ### Prerequisites
+
 - Node.js 18+ (or 20+)
 - MongoDB running locally (default: mongodb://127.0.0.1:27017)
 
 ### Backend
+
 ```bash
 cd backend
 npm install
@@ -122,6 +132,7 @@ npm run dev
 ```
 
 ### Frontend
+
 ```bash
 cd ../frontend
 npm install
