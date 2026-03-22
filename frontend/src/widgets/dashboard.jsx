@@ -1,35 +1,41 @@
 /*
- * Carbon & Crimson IMS
  * File: src/widgets/dashboard.jsx
- * Version: 1.1.2
- * Purpose: Main React Dashboard component (God Mode UI).
- *
- * Changelog:
- * - Fixed JSX mismatched tags in Compatibility + QR section.
- * - Gemini-only Smart Suggestions (Suggested Parts).
- * - PDF export remains.
+ * Description: Minimalist React dashboard using Poppins and Questrial typography.
+ * Version: 2.0.0
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BarChart3,
-  LogOut,
-  Search,
-  Shield,
-  Wrench,
+  Archive,
   AlertTriangle,
-  QrCode,
-  Plus,
   ArrowDown,
   ArrowUp,
-  ShoppingCart,
+  BarChart3,
   FileDown,
-  Archive,
+  LogOut,
+  Moon,
+  Plus,
+  QrCode,
+  Search,
+  Shield,
+  ShoppingCart,
+  Sun,
   Trash2,
-  Undo2
+  Undo2,
+  Wrench
 } from 'lucide-react';
-import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar } from 'recharts';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  BarChart,
+  Bar
+} from 'recharts';
 import QRCode from 'qrcode';
 
 import { useAuth } from '../state/auth_context';
@@ -37,36 +43,137 @@ import { useInventory } from '../hooks/use_inventory';
 import { formatPhp } from '../lib/format';
 import { exportDashboardPdf } from '../lib/pdf_export';
 
-function classNames(...xs) {
-  return xs.filter(Boolean).join(' ');
+const FONT_STYLE_ID = 'dashboard-google-fonts-minimal-v2';
+const FONT_PRECONNECT_ONE_ID = 'dashboard-google-fonts-preconnect-1';
+const FONT_PRECONNECT_TWO_ID = 'dashboard-google-fonts-preconnect-2';
+
+// Theme-aware classes - MASTERPIECE EDITION
+const getThemeClasses = (isDark) => ({
+  LAYOUT_CONTAINER: isDark 
+    ? 'min-h-screen bg-stone-950 text-stone-100' 
+    : 'min-h-screen bg-red-50 text-stone-900',
+  PAGE_WRAPPER: 'max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8',
+  CARD: isDark
+    ? 'rounded-3xl border border-red-900/30 bg-stone-900'
+    : 'rounded-3xl border border-red-100 bg-white',
+  INPUT: isDark
+    ? 'w-full rounded-2xl border border-red-900/40 bg-stone-800 px-4 py-3 text-sm text-stone-100 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-900/40 placeholder:text-stone-500'
+    : 'w-full rounded-2xl border border-red-200 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 placeholder:text-stone-400',
+  BUTTON_BASE: 'inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60',
+  BUTTON_PRIMARY: isDark
+    ? 'bg-red-700 text-white hover:bg-red-600'
+    : 'bg-red-600 text-white hover:bg-red-700',
+  BUTTON_SECONDARY: isDark
+    ? 'border border-red-900/40 bg-stone-800 text-stone-100 hover:bg-stone-700 hover:border-red-800/60'
+    : 'border border-red-200 bg-white text-stone-800 hover:bg-red-50 hover:border-red-300',
+  BUTTON_DANGER: isDark
+    ? 'bg-red-800 text-white hover:bg-red-700'
+    : 'bg-red-700 text-white hover:bg-red-800',
+  CHIP: isDark
+    ? 'inline-flex items-center gap-2 rounded-full border border-red-900/40 bg-stone-800 px-3 py-1.5 text-xs text-stone-300'
+    : 'inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-900',
+  TABLE_HEADER: isDark
+    ? 'text-[11px] font-medium uppercase tracking-[0.18em] text-red-400/80'
+    : 'text-[11px] font-medium uppercase tracking-[0.18em] text-red-700/80',
+  SECTION_LABEL: isDark
+    ? 'text-[11px] font-semibold uppercase tracking-[0.2em] text-red-400'
+    : 'text-[11px] font-semibold uppercase tracking-[0.2em] text-red-600',
+  SECTION_TITLE: isDark
+    ? 'mt-1 text-xl font-semibold text-stone-100'
+    : 'mt-1 text-xl font-semibold text-stone-900',
+  TEXT_PRIMARY: isDark ? 'text-stone-100' : 'text-stone-900',
+  TEXT_SECONDARY: isDark ? 'text-stone-400' : 'text-stone-600',
+  TEXT_TERTIARY: isDark ? 'text-stone-500' : 'text-stone-700',
+  BORDER: isDark ? 'border-red-900/30' : 'border-red-100',
+  BG_SECONDARY: isDark ? 'bg-stone-800' : 'bg-red-50',
+  BG_TERTIARY: isDark ? 'bg-stone-700' : 'bg-red-100',
+});
+
+function appendLinkTag({ id, rel, href, crossOrigin }) {
+  if (document.getElementById(id)) {
+    return;
+  }
+
+  const linkElement = document.createElement('link');
+  linkElement.id = id;
+  linkElement.rel = rel;
+  linkElement.href = href;
+
+  if (crossOrigin) {
+    linkElement.crossOrigin = crossOrigin;
+  }
+
+  document.head.appendChild(linkElement);
 }
 
-function GlassCard({ className = '', children }) {
-  return (
-    <div className={classNames('glass p-5 md:p-6', className)}>
-      {children}
-    </div>
-  );
+function useDashboardFonts() {
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    appendLinkTag({
+      id: FONT_PRECONNECT_ONE_ID,
+      rel: 'preconnect',
+      href: 'https://fonts.googleapis.com'
+    });
+
+    appendLinkTag({
+      id: FONT_PRECONNECT_TWO_ID,
+      rel: 'preconnect',
+      href: 'https://fonts.gstatic.com',
+      crossOrigin: 'anonymous'
+    });
+
+    appendLinkTag({
+      id: FONT_STYLE_ID,
+      rel: 'stylesheet',
+      href:
+        'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Questrial&display=swap'
+    });
+  }, []);
 }
 
-function Metric({ label, value, icon: Icon }) {
+function classNames(...values) {
+  return values.filter(Boolean).join(' ');
+}
+
+function SectionHeading({ label, title, action, theme }) {
+  const classes = getThemeClasses(theme === 'dark');
   return (
-    <div className="glass p-4 border-white/10">
-      <div className="flex items-center justify-between">
-        <div className="text-xs uppercase tracking-[0.3em] text-white/45">{label}</div>
-        <Icon className="w-4 h-4 text-crimson/80" />
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <div className={classes.SECTION_LABEL}>{label}</div>
+        <h2 className={classes.SECTION_TITLE}>{title}</h2>
       </div>
-      <div className="mt-2 text-2xl font-black tracking-tight">{value}</div>
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }
 
-function MechanicalButton({ className = '', children, ...props }) {
+function ActionButton({
+  children,
+  className = '',
+  variant = 'secondary',
+  type = 'button',
+  theme,
+  ...props
+}) {
+  const classes = getThemeClasses(theme === 'dark');
+  const baseClass = classes.BUTTON_BASE;
+  const variantClassName =
+    variant === 'primary'
+      ? classes.BUTTON_PRIMARY
+      : variant === 'danger'
+        ? classes.BUTTON_DANGER
+        : classes.BUTTON_SECONDARY;
+
   return (
     <motion.button
-      whileTap={{ scale: 0.985, y: 1 }}
-      transition={{ duration: 0.06 }}
-      className={classNames('btn-mech', className)}
+      whileTap={{ scale: 0.985 }}
+      transition={{ duration: 0.08 }}
+      type={type}
+      className={classNames(baseClass, variantClassName, className)}
       {...props}
     >
       {children}
@@ -74,13 +181,81 @@ function MechanicalButton({ className = '', children, ...props }) {
   );
 }
 
-function RedlineRow({ emergency, children }) {
+function Card({ children, className = '', theme }) {
+  const classes = getThemeClasses(theme === 'dark');
+  return <div className={classNames(classes.CARD, 'p-5 sm:p-6', className)}>{children}</div>;
+}
+
+function MetricCard({ icon: Icon, label, value, helper, theme }) {
+  const classes = getThemeClasses(theme === 'dark');
+  const isDark = theme === 'dark';
+  return (
+    <Card theme={theme}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className={classNames('text-sm font-medium', classes.TEXT_SECONDARY)}>{label}</div>
+          <div className={classNames('mt-2 text-3xl font-bold tracking-tight', isDark ? 'text-red-400' : 'text-red-700')}>{value}</div>
+          {helper ? <div className={classNames('mt-2 text-sm', classes.TEXT_SECONDARY)}>{helper}</div> : null}
+        </div>
+        <div className={classNames('rounded-2xl border p-3', isDark ? 'border-red-900/40 bg-stone-800' : 'border-red-200 bg-red-50')}>
+          <Icon className={classNames('h-5 w-5', isDark ? 'text-red-400' : 'text-red-600')} />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function Modal({ open, title, children, onClose, theme }) {
+  const classes = getThemeClasses(theme === 'dark');
+  const isDark = theme === 'dark';
+  return (
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <div className={classNames('absolute inset-0 backdrop-blur-sm', isDark ? 'bg-black/60' : 'bg-stone-950/40')} onClick={onClose} />
+          <motion.div
+            initial={{ opacity: 0, y: 14, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            transition={{ duration: 0.18 }}
+            className={classNames('relative w-full max-w-2xl rounded-3xl border p-5 shadow-2xl sm:p-6', classes.CARD)}
+            style={{ fontFamily: "'Poppins', sans-serif" }}
+          >
+            <div className="flex items-center justify-between gap-4">
+              <h3
+                className={classNames('text-xl font-semibold', classes.TEXT_PRIMARY)}
+                style={{ fontFamily: "'Questrial', sans-serif" }}
+              >
+                {title}
+              </h3>
+              <ActionButton onClick={onClose} theme={theme}>Close</ActionButton>
+            </div>
+            <div className="mt-5">{children}</div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
+function InventoryRow({ children, isLowStock = false, theme }) {
+  const isDark = theme === 'dark';
   return (
     <div
       className={classNames(
-        'grid grid-cols-12 gap-3 items-center rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2',
-        'transition hover:bg-white/[0.04]',
-        emergency ? 'emergency' : ''
+        'grid grid-cols-12 gap-3 rounded-2xl border px-3 py-3 transition-all duration-200',
+        isLowStock
+          ? isDark
+            ? 'border-red-900/50 bg-red-950/40 hover:bg-red-950/60'
+            : 'border-red-300 bg-red-100 hover:bg-red-200'
+          : isDark
+            ? 'border-red-900/30 bg-stone-900 hover:bg-stone-800'
+            : 'border-red-100 bg-white hover:bg-red-50'
       )}
     >
       {children}
@@ -88,39 +263,12 @@ function RedlineRow({ emergency, children }) {
   );
 }
 
-function Modal({ open, title, children, onClose }) {
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-          <motion.div
-            initial={{ opacity: 0, y: 12, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.98 }}
-            transition={{ duration: 0.18 }}
-            className="relative w-full max-w-lg glass p-6"
-          >
-            <div className="flex items-center justify-between">
-              <div className="text-lg font-black tracking-tight">{title}</div>
-              <MechanicalButton onClick={onClose}>Close</MechanicalButton>
-            </div>
-            <div className="mt-4">{children}</div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
 export function Dashboard() {
+  useDashboardFonts();
+
   const { user, logout } = useAuth();
 
+  const [theme, setTheme] = useState('dark'); // Default to dark mode
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('active');
@@ -130,6 +278,7 @@ export function Dashboard() {
   const [compatModel, setCompatModel] = useState('');
   const [compatYear, setCompatYear] = useState('');
   const [qrSku, setQrSku] = useState('');
+  const [qrDataUrl, setQrDataUrl] = useState(null);
 
   const {
     inventory,
@@ -144,21 +293,37 @@ export function Dashboard() {
     compatSearch
   } = useInventory({ search, category, status });
 
-  const categoryOptions = useMemo(() => {
-    const base = ['Engine', 'Helmet', 'Tires', 'Gear', 'Accessories', 'Electrical', 'Brakes', 'Oil & Fluids'];
-    const fromData = (inventory || []).map((x) => String(x.category || '').trim()).filter(Boolean);
-    return Array.from(new Set([...base, ...fromData])).sort((a, b) => a.localeCompare(b));
-  }, [inventory]);
+  const inventoryList = Array.isArray(inventory) ? inventory : [];
 
-  const totalsOnHand = analytics?.totals?.onHand ?? 0;
-  const totalsItems = analytics?.totals?.items ?? 0;
+  const categoryOptions = useMemo(() => {
+    const defaultCategoryList = [
+      'Accessories',
+      'Brakes',
+      'Electrical',
+      'Engine',
+      'Gear',
+      'Helmet',
+      'Oil & Fluids',
+      'Tires'
+    ];
+
+    const inventoryCategoryList = inventoryList
+      .map((item) => String(item.category || '').trim())
+      .filter(Boolean);
+
+    return Array.from(new Set([...defaultCategoryList, ...inventoryCategoryList])).sort((left, right) =>
+      left.localeCompare(right)
+    );
+  }, [inventoryList]);
+
+  const totalItemsCount = Number(analytics?.totals?.items ?? 0);
+  const totalOnHandCount = Number(analytics?.totals?.onHand ?? 0);
+  const lowStockCount = Number(analytics?.lowStock?.length ?? 0);
 
   const revenueTotal = useMemo(() => {
-    const top = analytics?.topSelling || [];
-    return top.reduce((sum, x) => sum + Number(x.revenue_php || 0), 0);
+    const topSellingList = Array.isArray(analytics?.topSelling) ? analytics.topSelling : [];
+    return topSellingList.reduce((sum, item) => sum + Number(item.revenue_php || 0), 0);
   }, [analytics]);
-
-  const lowStockCount = analytics?.lowStock?.length ?? 0;
 
   const todaySales = analytics?.todaySales || {
     date: new Date().toISOString().slice(0, 10),
@@ -166,671 +331,844 @@ export function Dashboard() {
     revenue_php: 0,
     items: []
   };
+
   const todaySalesUnits = Number(todaySales.units || 0);
   const todaySalesRevenue = Number(todaySales.revenue_php || 0);
+  const todaySalesItems = Array.isArray(todaySales.items) ? todaySales.items : [];
 
-  const onCreate = async (e) => {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
+  const compatBike = compatSearch.data?.bike || null;
+  const compatSuggestions = Array.isArray(compatSearch.data?.suggestions)
+    ? compatSearch.data.suggestions
+    : [];
+
+  async function handleCreateItem(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+
     const payload = {
-      sku: String(form.get('sku') || '').trim(),
-      name: String(form.get('name') || '').trim(),
-      category: String(form.get('category') || 'Gear'),
-      bin_location: String(form.get('bin_location') || '').trim(),
-      price_php: Number(form.get('price_php') || 0),
-      cost_php: Number(form.get('cost_php') || 0),
-      quantity_on_hand: Number(form.get('quantity_on_hand') || 0),
-      low_stock_threshold: Number(form.get('low_stock_threshold') || 5),
+      sku: String(formData.get('sku') || '').trim(),
+      name: String(formData.get('name') || '').trim(),
+      category: String(formData.get('category') || '').trim(),
+      bin_location: String(formData.get('bin_location') || '').trim(),
+      price_php: Number(formData.get('price_php') || 0),
+      cost_php: Number(formData.get('cost_php') || 0),
+      quantity_on_hand: Number(formData.get('quantity_on_hand') || 0),
+      low_stock_threshold: Number(formData.get('low_stock_threshold') || 5),
       compatibility: []
     };
 
     await createItem.mutateAsync(payload);
     setCreateOpen(false);
-    e.currentTarget.reset();
-  };
+    event.currentTarget.reset();
+  }
 
-  const onCompat = async (e) => {
-    e.preventDefault();
+  async function handleCompatibilitySubmit(event) {
+    event.preventDefault();
+
     await compatSearch.mutateAsync({
       make: compatMake,
       model: compatModel,
       year: compatYear ? Number(compatYear) : undefined
     });
-  };
+  }
 
-  const compatBike = compatSearch.data?.bike || null;
-  const compatSuggestions = compatSearch.data?.suggestions || [];
+  async function generateQrCode() {
+    const normalizedSku = String(qrSku || '').trim();
 
-  const onGenerateQr = async () => {
-    const sku = String(qrSku || '').trim();
-    if (!sku) return null;
-    const dataUrl = await QRCode.toDataURL(sku, { margin: 1, width: 220 });
-    return dataUrl;
-  };
-
-  const [qrDataUrl, setQrDataUrl] = useState(null);
-
-  const handleMove = async ({ id, direction }) => {
-    const qtyStr = prompt(`Enter quantity to ${direction}:`);
-    if (!qtyStr) return;
-    const qty = Number(qtyStr);
-    if (!Number.isFinite(qty) || qty <= 0 || !Number.isInteger(qty)) {
-      alert('Quantity must be a positive integer.');
+    if (!normalizedSku) {
       return;
     }
-    const note = direction === 'SALE' ? 'sale' : 'warehouse move';
-    await moveStock.mutateAsync({ id, direction, quantity: qty, note });
-  };
 
-  const onExportPdf = async () => {
-    try {
-      await exportDashboardPdf({ user, analytics, inventory });
-    } catch (err) {
-      console.error(err);
-      alert('PDF export failed. Please try again.');
+    const dataUrl = await QRCode.toDataURL(normalizedSku, {
+      margin: 1,
+      width: 220
+    });
+
+    setQrDataUrl(dataUrl);
+  }
+
+  async function handleMoveStock({ id, direction }) {
+    const quantityText = window.prompt(`Enter quantity to ${direction}:`);
+
+    if (!quantityText) {
+      return;
     }
-  };
 
-  const scanSku = async () => {
-    const sku = prompt('Mock scan: paste SKU here (e.g. IMS-ABC123)');
-    if (!sku) return;
-    setSearch(String(sku).trim());
-  };
+    const quantityValue = Number(quantityText);
+
+    if (!Number.isInteger(quantityValue) || quantityValue <= 0) {
+      window.alert('Quantity must be a positive whole number.');
+      return;
+    }
+
+    const note = direction === 'SALE' ? 'sale' : 'warehouse move';
+
+    await moveStock.mutateAsync({
+      id,
+      direction,
+      quantity: quantityValue,
+      note
+    });
+  }
+
+  async function handleExportPdf() {
+    try {
+      await exportDashboardPdf({
+        user,
+        analytics,
+        inventory: inventoryList
+      });
+    } catch (error) {
+      console.error(error);
+      window.alert('PDF export failed. Please try again.');
+    }
+  }
+
+  function handleMockScan() {
+    const skuValue = window.prompt('Mock scan: paste SKU here (example: IMS-ABC123)');
+
+    if (!skuValue) {
+      return;
+    }
+
+    setSearch(String(skuValue).trim());
+  }
+
+  const classes = getThemeClasses(theme === 'dark');
+  const isDark = theme === 'dark';
 
   return (
-    <div className="min-h-screen bg-carbon text-white relative overflow-hidden">
-      {/* Background gradients */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-75"
-        style={{
-          background:
-            'radial-gradient(circle at 20% 15%, rgba(220,38,38,0.23), transparent 40%),' +
-            'radial-gradient(circle at 80% 70%, rgba(220,38,38,0.10), transparent 45%),' +
-            'linear-gradient(135deg, rgba(255,255,255,0.04), transparent 65%)'
-        }}
-      />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {/* Top Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28 }}
-          className="glass px-5 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-        >
-          <div className="group relative flex items-center gap-4 p-2 cursor-pointer">
-            <div className="relative">
-              <div className="absolute -inset-1.5 rounded-2xl bg-crimson opacity-20 blur-xl group-hover:opacity-60 group-hover:scale-110 transition-all duration-700" />
-              <div className="relative h-14 w-14 overflow-hidden rounded-xl border border-white/20 bg-black shadow-2xl">
+    <div
+      className={classes.LAYOUT_CONTAINER}
+      style={{ fontFamily: "'Poppins', sans-serif" }}
+    >
+      <div className={classes.PAGE_WRAPPER}>
+        <Card className="overflow-hidden" theme={theme}>
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-start gap-4">
+              <div className={classNames('flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border', classes.BORDER, classes.BG_TERTIARY)}>
                 <img
                   src="/img/logo.jpg"
                   alt="MotoMart Logo"
-                  className="h-full w-full object-cover grayscale-[0.3] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-500"
+                  className="h-full w-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] transition-transform" />
-                <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(255,255,255,0.1)_0%,rgba(0,0,0,0.4)_100%)]" />
-                <div className="absolute bottom-0 h-[3px] w-full bg-crimson shadow-[0_0_12px_#dc143c]" />
               </div>
-            </div>
 
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <div className="h-[1px] w-6 bg-gradient-to-r from-crimson to-transparent" />
-                <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/40 group-hover:text-white transition-colors">
-                  System <span className="text-crimson/80">Online</span>
+              <div>
+                <div className={classNames('text-xs font-semibold uppercase tracking-[0.24em]', classes.TEXT_SECONDARY)}>
+                  Inventory Dashboard
                 </div>
-              </div>
-
-              <div className="relative mt-[-4px]">
-                <h1 className="text-4xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white via-zinc-200 to-zinc-500">
+                <h1
+                  className={classNames('mt-1 text-3xl font-bold tracking-tight sm:text-4xl', isDark ? 'text-red-400' : 'text-red-700')}
+                  style={{ fontFamily: "'Questrial', sans-serif" }}
+                >
                   MOTOMART
                 </h1>
-                <div className="text-[9px] uppercase tracking-widest text-white/20 font-medium -mt-1 group-hover:text-white/40 transition-all">
-                  Engineered by <span className="text-crimson/50 font-bold">DotOrbit</span>
+                <div className={classNames('mt-1 text-sm', classes.TEXT_SECONDARY)}>
+                  Clean inventory control, sales visibility, and part operations.
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="chip border-crimson/30 bg-crimson/10">
-              <Shield className="w-4 h-4 text-crimson" />
-              <span className="text-white/80">{user?.role || 'staff'}</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <ActionButton variant="primary" onClick={() => setCreateOpen(true)} theme={theme}>
+                <Plus className="h-4 w-4" />
+                Add Part
+              </ActionButton>
+
+              <ActionButton onClick={handleMockScan} theme={theme}>
+                <QrCode className="h-4 w-4" />
+                Mock Scan
+              </ActionButton>
+
+              <ActionButton onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} theme={theme}>
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </ActionButton>
+
+              <ActionButton onClick={logout} theme={theme}>
+                <LogOut className="h-4 w-4" />
+                Logout
+              </ActionButton>
             </div>
-
-            <MechanicalButton className="btn-crimson" onClick={() => setCreateOpen(true)}>
-              <Plus className="w-4 h-4" />
-              Add Part
-            </MechanicalButton>
-
-            <MechanicalButton onClick={scanSku}>
-              <QrCode className="w-4 h-4 text-crimson/80" />
-              Mock Scan
-            </MechanicalButton>
-
-            <MechanicalButton onClick={logout}>
-              <LogOut className="w-4 h-4" />
-              Logout
-            </MechanicalButton>
           </div>
-        </motion.div>
+        </Card>
 
-        {/* Metrics */}
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Metric label="Parts" value={totalsItems} icon={Wrench} />
-          <Metric label="On Hand" value={totalsOnHand} icon={BarChart3} />
-          <Metric label="Low Stock" value={lowStockCount} icon={AlertTriangle} />
-          <Metric label="Top Revenue" value={formatPhp(revenueTotal)} icon={ShoppingCart} />
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            icon={Wrench}
+            label="Parts"
+            value={totalItemsCount}
+            helper="Tracked items in inventory"
+            theme={theme}
+          />
+          <MetricCard
+            icon={BarChart3}
+            label="On Hand"
+            value={totalOnHandCount}
+            helper="Current total stock units"
+            theme={theme}
+          />
+          <MetricCard
+            icon={AlertTriangle}
+            label="Low Stock"
+            value={lowStockCount}
+            helper="Items near threshold"
+            theme={theme}
+          />
+          <MetricCard
+            icon={ShoppingCart}
+            label="Top Revenue"
+            value={formatPhp(revenueTotal)}
+            helper="Revenue from top-selling items"
+            theme={theme}
+          />
         </div>
 
-        {/* Charts */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <GlassCard className="lg:col-span-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs uppercase tracking-[0.35em] text-white/45">Stock Pulse</div>
-                <div className="text-lg font-black tracking-tight mt-1">Revenue Trends</div>
-              </div>
-              <div className="chip border-crimson/30 bg-crimson/10">
-                <BarChart3 className="w-4 h-4 text-crimson" />
-                <span className="text-white/80">Live</span>
-              </div>
-            </div>
+        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <Card className="xl:col-span-2" theme={theme}>
+            <SectionHeading
+              label="Analytics"
+              title="Revenue Trends"
+              theme={theme}
+              action={
+                <div className={classes.CHIP}>
+                  <BarChart3 className="h-4 w-4" />
+                  <span>Live</span>
+                </div>
+              }
+            />
 
-            <div className="mt-4 h-64">
+            <div className="mt-5 h-72">
               {analyticsLoading ? (
-                <div className="text-white/50">Loading chart...</div>
+                <div className={classNames('flex h-full items-center justify-center text-sm', classes.TEXT_SECONDARY)}>
+                  Loading chart...
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={analytics?.revenueTrends || []}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                    <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.55)', fontSize: 12 }} />
-                    <YAxis tick={{ fill: 'rgba(255,255,255,0.55)', fontSize: 12 }} />
-                    <Tooltip contentStyle={{ background: 'rgba(10,10,10,0.92)', border: '1px solid rgba(220,38,38,0.35)' }} />
-                    <Area type="monotone" dataKey="revenue_php" stroke="rgba(220,38,38,0.9)" fill="rgba(220,38,38,0.18)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#57534e' : '#e7e5e4'} />
+                    <XAxis dataKey="date" tick={{ fill: isDark ? '#a8a29e' : '#78716c', fontSize: 12 }} />
+                    <YAxis tick={{ fill: isDark ? '#a8a29e' : '#78716c', fontSize: 12 }} />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: 16,
+                        border: isDark ? '1px solid #7f1d1d' : '1px solid #e7e5e4',
+                        background: isDark ? '#1c1917' : '#ffffff',
+                        color: isDark ? '#f5f5f4' : '#1c1917',
+                        boxShadow: isDark ? '0 10px 30px rgba(220,38,38,0.2)' : '0 10px 30px rgba(0,0,0,0.06)'
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="revenue_php"
+                      stroke={isDark ? '#f87171' : '#dc2626'}
+                      fill={isDark ? '#7f1d1d' : '#fecaca'}
+                      strokeWidth={2}
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               )}
             </div>
-          </GlassCard>
+          </Card>
 
-          <GlassCard>
-            <div className="text-xs uppercase tracking-[0.35em] text-white/45">Ratio</div>
-            <div className="text-lg font-black tracking-tight mt-1">Stock-to-Sales</div>
-            <div className="mt-4 h-64">
+          <Card theme={theme}>
+            <SectionHeading label="Ratio" title="Stock-to-Sales" theme={theme} />
+            <div className="mt-5 h-72">
               {analyticsLoading ? (
-                <div className="text-white/50">Loading chart...</div>
+                <div className={classNames('flex h-full items-center justify-center text-sm', classes.TEXT_SECONDARY)}>
+                  Loading chart...
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={analytics?.stockToSalesRatio || []}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                    <XAxis dataKey="category" tick={{ fill: 'rgba(255,255,255,0.55)', fontSize: 12 }} />
-                    <YAxis tick={{ fill: 'rgba(255,255,255,0.55)', fontSize: 12 }} />
-                    <Tooltip contentStyle={{ background: 'rgba(10,10,10,0.92)', border: '1px solid rgba(220,38,38,0.35)' }} />
-                    <Bar dataKey="ratio" fill="rgba(220,38,38,0.55)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#57534e' : '#e7e5e4'} />
+                    <XAxis dataKey="category" tick={{ fill: isDark ? '#a8a29e' : '#78716c', fontSize: 12 }} />
+                    <YAxis tick={{ fill: isDark ? '#a8a29e' : '#78716c', fontSize: 12 }} />
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: 16,
+                        border: isDark ? '1px solid #7f1d1d' : '1px solid #e7e5e4',
+                        background: isDark ? '#1c1917' : '#ffffff',
+                        color: isDark ? '#f5f5f4' : '#1c1917',
+                        boxShadow: isDark ? '0 10px 30px rgba(220,38,38,0.2)' : '0 10px 30px rgba(0,0,0,0.06)'
+                      }}
+                    />
+                    <Bar dataKey="ratio" fill={isDark ? '#ef4444' : '#dc2626'} radius={[10, 10, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
-          </GlassCard>
+          </Card>
         </div>
 
-        {/* Sales Today */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <GlassCard className="lg:col-span-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs uppercase tracking-[0.35em] text-white/45">Daily Sales Log</div>
-                <div className="text-lg font-black tracking-tight mt-1">Sales Today</div>
-              </div>
-              <div className="chip border-crimson/30 bg-crimson/10">
-                <ShoppingCart className="w-4 h-4 text-crimson" />
-                <span className="text-white/80">{todaySales.date}</span>
-              </div>
-            </div>
+        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <Card className="xl:col-span-2" theme={theme}>
+            <SectionHeading
+              label="Daily Sales Log"
+              title="Sales Today"
+              theme={theme}
+              action={
+                <div className={classes.CHIP}>
+                  <ShoppingCart className="h-4 w-4" />
+                  <span>{todaySales.date}</span>
+                </div>
+              }
+            />
 
-            <div className="mt-4">
+            <div className="mt-5">
               {analyticsLoading ? (
-                <div className="text-white/50">Loading today sales...</div>
-              ) : Array.isArray(todaySales.items) && todaySales.items.length > 0 ? (
-                <div className="space-y-2">
-                  <div className="hidden md:block">
-                    <div className="grid grid-cols-12 gap-3 text-xs text-white/50 px-3 pb-2">
-                      <div className="col-span-3">SKU</div>
-                      <div className="col-span-6">Name</div>
-                      <div className="col-span-1 text-right">Units</div>
-                      <div className="col-span-2 text-right">Revenue</div>
-                    </div>
+                <div className={classNames('text-sm', classes.TEXT_SECONDARY)}>Loading today sales...</div>
+              ) : todaySalesItems.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="hidden grid-cols-12 gap-3 px-3 md:grid">
+                    <div className={classNames(classes.TABLE_HEADER, 'col-span-3')}>SKU</div>
+                    <div className={classNames(classes.TABLE_HEADER, 'col-span-5')}>Name</div>
+                    <div className={classNames(classes.TABLE_HEADER, 'col-span-1 text-right')}>Units</div>
+                    <div className={classNames(classes.TABLE_HEADER, 'col-span-3 text-right')}>Revenue</div>
                   </div>
 
-                  {todaySales.items.map((x) => (
+                  {todaySalesItems.map((item) => (
                     <div
-                      key={x.sku}
-                      className="grid grid-cols-12 gap-3 items-center rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2 hover:bg-white/[0.04] transition"
+                      key={item.sku}
+                      className={classNames('grid grid-cols-12 gap-3 rounded-2xl border px-3 py-3', classes.BORDER, classes.BG_SECONDARY)}
                     >
-                      <div className="col-span-12 md:col-span-3 text-sm font-semibold">{x.sku}</div>
-                      <div className="col-span-12 md:col-span-6 text-sm text-white/80">{x.name}</div>
-                      <div className="col-span-6 md:col-span-1 text-right text-sm">{x.units}</div>
-                      <div className="col-span-6 md:col-span-2 text-right text-sm font-semibold">
-                        {formatPhp(Number(x.revenue_php || 0))}
+                      <div className={classNames('col-span-12 text-sm font-semibold md:col-span-3', classes.TEXT_PRIMARY)}>
+                        {item.sku}
+                      </div>
+                      <div className={classNames('col-span-12 text-sm md:col-span-5', classes.TEXT_TERTIARY)}>
+                        {item.name}
+                      </div>
+                      <div className={classNames('col-span-6 text-right text-sm md:col-span-1', classes.TEXT_TERTIARY)}>
+                        {item.units}
+                      </div>
+                      <div className={classNames('col-span-6 text-right text-sm font-semibold md:col-span-3', classes.TEXT_PRIMARY)}>
+                        {formatPhp(Number(item.revenue_php || 0))}
                       </div>
                     </div>
                   ))}
 
-                  <div className="pt-2 flex items-center justify-end gap-4 text-sm">
-                    <div className="text-white/50">
-                      Total Units: <span className="text-white font-semibold">{todaySalesUnits}</span>
+                  <div className={classNames('flex flex-col gap-2 border-t pt-4 text-sm sm:flex-row sm:items-center sm:justify-end sm:gap-6', classes.BORDER, classes.TEXT_SECONDARY)}>
+                    <div>
+                      Total Units: <span className={classNames('font-semibold', classes.TEXT_PRIMARY)}>{todaySalesUnits}</span>
                     </div>
-                    <div className="text-white/50">
-                      Total Revenue: <span className="text-white font-semibold">{formatPhp(todaySalesRevenue)}</span>
+                    <div>
+                      Total Revenue:{' '}
+                      <span className={classNames('font-semibold', classes.TEXT_PRIMARY)}>
+                        {formatPhp(todaySalesRevenue)}
+                      </span>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-white/50">No sales recorded for today yet.</div>
+                <div className={classNames('text-sm', classes.TEXT_SECONDARY)}>No sales recorded for today yet.</div>
               )}
             </div>
-          </GlassCard>
+          </Card>
 
-          <GlassCard>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs uppercase tracking-[0.35em] text-white/45">Operator Toolkit</div>
-                <div className="text-lg font-black tracking-tight mt-1">Quick Actions</div>
-              </div>
-            </div>
+          <Card theme={theme}>
+            <SectionHeading label="Toolkit" title="Quick Actions" theme={theme} />
 
-            <div className="mt-4 space-y-3">
-              <MechanicalButton className="w-full btn-crimson" onClick={onExportPdf}>
-                <FileDown className="w-4 h-4" />
-                Export PDF (Tables)
-              </MechanicalButton>
+            <div className="mt-5 space-y-3">
+              <ActionButton variant="primary" className="w-full" onClick={handleExportPdf} theme={theme}>
+                <FileDown className="h-4 w-4" />
+                Export PDF
+              </ActionButton>
+
+              <ActionButton
+                className="w-full"
+                onClick={() => setStatus(status === 'active' ? 'archived' : 'active')}
+                theme={theme}
+              >
+                {status === 'active' ? 'Show Archived' : 'Show Active'}
+              </ActionButton>
             </div>
-          </GlassCard>
+          </Card>
         </div>
 
-        {/* Compatibility + QR (FIXED) */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <GlassCard className="lg:col-span-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs uppercase tracking-[0.35em] text-white/45">Smart Suggestions</div>
-                <div className="text-lg font-black tracking-tight mt-1">  Suggested Parts</div>
-              </div>
-              <div className="chip border-crimson/30 bg-crimson/10">
-                <Search className="w-4 h-4 text-crimson" />
-                <span className="text-white/80">Gemini AI</span>
-              </div>
-            </div>
+        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <Card className="xl:col-span-2" theme={theme}>
+            <SectionHeading
+              label="Smart Suggestions"
+              title="Suggested Parts"
+              theme={theme}
+              action={
+                <div className={classes.CHIP}>
+                  <Search className="h-4 w-4" />
+                  <span>Gemini AI</span>
+                </div>
+              }
+            />
 
-            <form className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3" onSubmit={onCompat}>
+            <form
+              className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4"
+              onSubmit={handleCompatibilitySubmit}
+            >
               <input
-                className="input-mech"
-                placeholder="Make (e.g. Honda)"
+                className={classes.INPUT}
+                placeholder="Make"
                 value={compatMake}
-                onChange={(e) => setCompatMake(e.target.value)}
+                onChange={(event) => setCompatMake(event.target.value)}
               />
               <input
-                className="input-mech"
-                placeholder="Model (e.g. Click 150)"
+                className={classes.INPUT}
+                placeholder="Model"
                 value={compatModel}
-                onChange={(e) => setCompatModel(e.target.value)}
+                onChange={(event) => setCompatModel(event.target.value)}
               />
               <input
-                className="input-mech"
-                placeholder="Year (e.g. 2020)"
+                className={classes.INPUT}
+                placeholder="Year"
                 value={compatYear}
-                onChange={(e) => setCompatYear(e.target.value)}
+                onChange={(event) => setCompatYear(event.target.value)}
               />
-              <MechanicalButton className="btn-crimson" type="submit" disabled={compatSearch.isPending}>
-                <Search className="w-4 h-4" />
+              <ActionButton
+                variant="primary"
+                type="submit"
+                disabled={compatSearch.isPending}
+                theme={theme}
+              >
+                <Search className="h-4 w-4" />
                 Suggest
-              </MechanicalButton>
+              </ActionButton>
             </form>
 
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="glass p-4">
-                <div className="text-sm font-semibold text-white/80">Bike</div>
-                <div className="mt-2 text-xs text-white/50">Your query (used as context).</div>
+            <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className={classNames('rounded-2xl border p-4', classes.BORDER, classes.BG_SECONDARY)}>
+                <div className={classNames('text-sm font-semibold', classes.TEXT_PRIMARY)}>Bike</div>
+                <div className={classNames('mt-1 text-sm', classes.TEXT_SECONDARY)}>Input reference for AI suggestions.</div>
 
-                <div className="mt-3 space-y-2">
+                <div className="mt-4">
                   {compatBike ? (
-                    <div className="rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
-                      <div className="font-semibold">{compatBike.make} {compatBike.model}</div>
-                      <div className="text-xs text-white/55">{compatBike.year ?? '—'}</div>
+                    <div className={classNames('rounded-2xl border px-4 py-3', classes.BORDER, isDark ? 'bg-stone-800' : 'bg-white')}>
+                      <div className={classNames('font-semibold', classes.TEXT_PRIMARY)}>
+                        {compatBike.make} {compatBike.model}
+                      </div>
+                      <div className={classNames('mt-1 text-sm', classes.TEXT_SECONDARY)}>{compatBike.year ?? '—'}</div>
                     </div>
                   ) : (
-                    <div className="text-white/50 text-sm">No query yet.</div>
+                    <div className={classNames('text-sm', classes.TEXT_SECONDARY)}>No query yet.</div>
                   )}
                 </div>
               </div>
 
-              <div className="glass p-4">
-                <div className="text-sm font-semibold text-white/80">Suggested Parts (AI)</div>
-                <div className="mt-3 space-y-2 max-h-56 overflow-auto pr-2">
-                  {compatSuggestions.map((p, idx) => (
-                    <div key={idx} className="rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
-                      <div className="flex items-center justify-between">
-                        <div className="font-semibold">{p.name}</div>
-                        <span className="text-xs text-white/50">AI</span>
+              <div className={classNames('rounded-2xl border p-4', classes.BORDER, classes.BG_SECONDARY)}>
+                <div className={classNames('text-sm font-semibold', classes.TEXT_PRIMARY)}>Suggested Parts</div>
+                <div className={classNames('mt-1 text-sm', classes.TEXT_SECONDARY)}>Minimal AI-assisted compatibility view.</div>
+
+                <div className="mt-4 max-h-64 space-y-3 overflow-auto pr-1">
+                  {compatSuggestions.map((item, index) => (
+                    <div
+                      key={`${item.name}-${index}`}
+                      className={classNames('rounded-2xl border px-4 py-3', classes.BORDER, isDark ? 'bg-stone-800' : 'bg-white')}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className={classNames('font-semibold', classes.TEXT_PRIMARY)}>{item.name}</div>
+                        <span className={classNames('text-xs', classes.TEXT_SECONDARY)}>AI</span>
                       </div>
-                      {p.note ? (
-                        <div className="mt-1 text-xs text-white/55">{p.note}</div>
-                      ) : (
-                        <div className="mt-1 text-xs text-white/55">Suggested part</div>
-                      )}
+                      <div className={classNames('mt-1 text-sm', classes.TEXT_SECONDARY)}>
+                        {item.note || 'Suggested part'}
+                      </div>
                     </div>
                   ))}
 
-                  {compatSearch.isSuccess && compatSuggestions.length === 0 && (
-                    <div className="text-white/50 text-sm">No suggestions returned. Check GEMINI_API_KEY.</div>
-                  )}
+                  {compatSearch.isSuccess && compatSuggestions.length === 0 ? (
+                    <div className={classNames('text-sm', classes.TEXT_SECONDARY)}>
+                      No suggestions returned. Check your GEMINI_API_KEY.
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
-          </GlassCard>
+          </Card>
 
-          <GlassCard>
-            <div className="text-xs uppercase tracking-[0.35em] text-white/45">QR / Barcode</div>
-            <div className="text-lg font-black tracking-tight mt-1">SKU Generator</div>
+          <Card theme={theme}>
+            <SectionHeading label="QR / Barcode" title="SKU Generator" theme={theme} />
 
-            <div className="mt-4">
+            <div className="mt-5">
               <input
-                className="input-mech"
-                placeholder="Enter SKU to generate QR"
+                className={classes.INPUT}
+                placeholder="Enter SKU"
                 value={qrSku}
-                onChange={(e) => setQrSku(e.target.value)}
+                onChange={(event) => setQrSku(event.target.value)}
               />
 
-              <div className="mt-3 flex gap-2">
-                <MechanicalButton className="btn-crimson w-full" onClick={async () => setQrDataUrl(await onGenerateQr())}>
-                  <QrCode className="w-4 h-4" />
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <ActionButton variant="primary" className="w-full" onClick={generateQrCode} theme={theme}>
+                  <QrCode className="h-4 w-4" />
                   Generate
-                </MechanicalButton>
-                <MechanicalButton className="w-full" onClick={() => setQrDataUrl(null)}>
+                </ActionButton>
+                <ActionButton className="w-full" onClick={() => setQrDataUrl(null)} theme={theme}>
                   Clear
-                </MechanicalButton>
+                </ActionButton>
               </div>
 
-              {qrDataUrl && (
-                <div className="mt-4 glass p-4 flex items-center justify-center border-crimson/30">
-                  <img src={qrDataUrl} alt="SKU QR" className="w-44 h-44 rounded-xl border border-white/10" />
+              {qrDataUrl ? (
+                <div className={classNames('mt-5 flex items-center justify-center rounded-2xl border p-4', classes.BORDER, classes.BG_SECONDARY)}>
+                  <img
+                    src={qrDataUrl}
+                    alt="SKU QR"
+                    className={classNames('h-44 w-44 rounded-2xl border p-2', classes.BORDER, isDark ? 'bg-stone-800' : 'bg-white')}
+                  />
                 </div>
-              )}
+              ) : null}
 
-              <div className="mt-3 text-xs text-white/45">
-                Mock-safe: QR generation only. Use “Mock Scan” to query by SKU.
+              <div className={classNames('mt-4 text-xs', classes.TEXT_SECONDARY)}>
+                QR generation only. Use Mock Scan to search by SKU.
               </div>
             </div>
-          </GlassCard>
+          </Card>
         </div>
 
-        {/* Inventory table */}
-        <div className="mt-6 glass p-5 md:p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-              <div className="text-xs uppercase tracking-[0.35em] text-white/45">Dynamic Inventory Engine</div>
-              <div className="text-lg font-black tracking-tight mt-1">{status === 'archived' ? 'Archived Parts' : 'Parts'}</div>
-            </div>
+        <Card className="mt-6" theme={theme}>
+          <SectionHeading
+            label="Inventory"
+            title={status === 'archived' ? 'Archived Parts' : 'Parts'}
+            theme={theme}
+            action={
+              <div className={classes.CHIP}>
+                <span>Results</span>
+                <span className={classNames('font-semibold', classes.TEXT_PRIMARY)}>{inventoryList.length}</span>
+              </div>
+            }
+          />
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="relative group">
-                <Search className="w-4 h-4 text-white/40 absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-crimson transition" />
+          <div className="mt-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3 xl:max-w-3xl">
+              <div className="relative">
+                <Search className={classNames('pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2', classes.TEXT_SECONDARY)} />
                 <input
-                  className="input-mech pl-10 w-64"
-                  placeholder="Search SKU / name / bin..."
+                  className={classNames(classes.INPUT, 'pl-11')}
+                  placeholder="Search SKU, name, bin..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(event) => setSearch(event.target.value)}
                 />
               </div>
 
-              <div className="w-56">
+              <div>
                 <input
-                  className="input-mech w-full"
-                  placeholder="Category (optional)"
+                  className={classes.INPUT}
+                  placeholder="Category"
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={(event) => setCategory(event.target.value)}
                   list="category_filter_list"
                 />
                 <datalist id="category_filter_list">
-                  {categoryOptions.map((c) => (
-                    <option key={c} value={c} />
+                  {categoryOptions.map((item) => (
+                    <option key={item} value={item} />
                   ))}
                 </datalist>
               </div>
 
-              <MechanicalButton onClick={onExportPdf} className="btn-crimson">
-                <FileDown className="w-4 h-4" />
-                PDF
-              </MechanicalButton>
-
-              <MechanicalButton
-                className="btn-crimson"
-                onClick={() => setStatus(status === 'active' ? 'archived' : 'active')}
-              >
-                {status === 'active' ? 'Show Archived' : 'Show Active'}
-              </MechanicalButton>
-
-              <div className="chip">
-                <span className="text-white/50">Results</span>
-                <span className="font-bold">{inventory.length}</span>
+              <div className="flex gap-2">
+                <ActionButton variant="primary" className="w-full" onClick={handleExportPdf} theme={theme}>
+                  <FileDown className="h-4 w-4" />
+                  PDF
+                </ActionButton>
+                <ActionButton
+                  className="w-full"
+                  onClick={() => setStatus(status === 'active' ? 'archived' : 'active')}
+                  theme={theme}
+                >
+                  {status === 'active' ? 'Archived' : 'Active'}
+                </ActionButton>
               </div>
             </div>
           </div>
 
-          <div className="mt-4 hidden md:block">
-            <div className="grid grid-cols-12 gap-3 text-xs text-white/50 px-3 pb-2">
-              <div className="col-span-2">SKU</div>
-              <div className="col-span-3">Name</div>
-              <div className="col-span-1">Cat</div>
-              <div className="col-span-2">Bin</div>
-              <div className="col-span-2">Stock</div>
-              <div className="col-span-2 text-right">Actions</div>
-            </div>
+          <div className="mt-5 hidden grid-cols-12 gap-3 px-3 md:grid">
+            <div className={classNames(classes.TABLE_HEADER, 'col-span-2')}>SKU</div>
+            <div className={classNames(classes.TABLE_HEADER, 'col-span-3')}>Name</div>
+            <div className={classNames(classes.TABLE_HEADER, 'col-span-1')}>Category</div>
+            <div className={classNames(classes.TABLE_HEADER, 'col-span-2')}>Bin</div>
+            <div className={classNames(classes.TABLE_HEADER, 'col-span-2')}>Stock</div>
+            <div className={classNames(classes.TABLE_HEADER, 'col-span-2 text-right')}>Actions</div>
           </div>
 
-          <div className="mt-2 space-y-2">
+          <div className="mt-3 space-y-3">
             {inventoryLoading ? (
-              <div className="text-white/50">Loading inventory...</div>
-            ) : (
-              inventory.map((item) => {
-                const emergency = Number(item.quantity_on_hand) <= Number(item.low_stock_threshold);
+              <div className={classNames('py-10 text-center text-sm', classes.TEXT_SECONDARY)}>Loading inventory...</div>
+            ) : inventoryList.length > 0 ? (
+              inventoryList.map((item) => {
+                const currentQuantity = Number(item.quantity_on_hand || 0);
+                const thresholdQuantity = Number(item.low_stock_threshold || 0);
+                const isLowStock = currentQuantity <= thresholdQuantity;
+
                 return (
-                  <RedlineRow key={item._id} emergency={emergency}>
-                    <div className="col-span-12 md:col-span-2 text-sm font-semibold">{item.sku}</div>
-                    <div className="col-span-12 md:col-span-3 text-sm text-white/85">{item.name}</div>
-                    <div className="col-span-6 md:col-span-1">
-                      <span className="chip">{item.category}</span>
+                  <InventoryRow key={item._id} isLowStock={isLowStock} theme={theme}>
+                    <div className={classNames('col-span-12 text-sm font-semibold md:col-span-2', classes.TEXT_PRIMARY)}>
+                      {item.sku}
                     </div>
-                    <div className="col-span-6 md:col-span-2 text-sm text-white/70">{item.bin_location}</div>
+
+                    <div className={classNames('col-span-12 text-sm md:col-span-3', classes.TEXT_TERTIARY)}>
+                      {item.name}
+                    </div>
+
+                    <div className="col-span-6 md:col-span-1">
+                      <span className={classNames('inline-flex rounded-full border px-3 py-1 text-xs', classes.BORDER, classes.BG_TERTIARY, classes.TEXT_TERTIARY)}>
+                        {item.category}
+                      </span>
+                    </div>
+
+                    <div className={classNames('col-span-6 text-sm md:col-span-2', classes.TEXT_SECONDARY)}>
+                      {item.bin_location}
+                    </div>
+
                     <div className="col-span-12 md:col-span-2">
                       <div
                         className={classNames(
-                          'inline-flex items-center gap-2 rounded-full px-3 py-1 border text-xs',
-                          emergency
-                            ? 'border-crimson/50 bg-crimson/15 text-white'
-                            : 'border-white/10 bg-white/[0.03] text-white/80'
+                          'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs',
+                          isLowStock
+                            ? isDark
+                              ? 'border-red-800 bg-red-950/50 text-red-400'
+                              : 'border-red-200 bg-red-100 text-red-700'
+                            : isDark
+                              ? 'border-red-900/40 bg-stone-800 text-stone-300'
+                              : 'border-stone-200 bg-stone-100 text-stone-700'
                         )}
                       >
-                        <span className={classNames('font-black', emergency ? 'text-crimson' : 'text-white')}>
-                          {item.quantity_on_hand}
-                        </span>
-                        <span className="text-white/30">/</span>
-                        <span className="text-white/60">{item.low_stock_threshold}</span>
-                        {emergency && (
-                          <span className="ml-1 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.25em] text-crimson">
-                            <span className="w-1.5 h-1.5 rounded-full bg-crimson animate-pulse" />
+                        <span className="font-semibold">{currentQuantity}</span>
+                        <span>/</span>
+                        <span>{thresholdQuantity}</span>
+                        {isLowStock ? (
+                          <span className="inline-flex items-center gap-1 font-medium">
+                            <span className={classNames('h-2 w-2 rounded-full', isDark ? 'bg-red-500' : 'bg-red-500')} />
+                            Low
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     </div>
 
-                    <div className="col-span-12 md:col-span-2 flex md:justify-end flex-wrap gap-2">
+                    <div className="col-span-12 flex flex-wrap gap-2 md:col-span-2 md:justify-end">
                       {status === 'active' ? (
                         <>
-                          <MechanicalButton
-                            className="group border-crimson/20 hover:border-crimson/40"
-                            onClick={() => handleMove({ id: item._id, direction: 'IN' })}
-                          >
-                            <ArrowUp className="w-4 h-4 text-white/80 group-hover:text-crimson transition" />
+                          <ActionButton onClick={() => handleMoveStock({ id: item._id, direction: 'IN' })} theme={theme}>
+                            <ArrowUp className="h-4 w-4" />
                             IN
-                          </MechanicalButton>
+                          </ActionButton>
 
-                          <MechanicalButton
-                            className="group"
-                            onClick={() => handleMove({ id: item._id, direction: 'OUT' })}
-                          >
-                            <ArrowDown className="w-4 h-4 text-white/80 group-hover:text-crimson transition" />
+                          <ActionButton onClick={() => handleMoveStock({ id: item._id, direction: 'OUT' })} theme={theme}>
+                            <ArrowDown className="h-4 w-4" />
                             OUT
-                          </MechanicalButton>
+                          </ActionButton>
 
-                          <MechanicalButton
-                            className="btn-crimson group"
-                            onClick={() => handleMove({ id: item._id, direction: 'SALE' })}
+                          <ActionButton
+                            variant="primary"
+                            onClick={() => handleMoveStock({ id: item._id, direction: 'SALE' })}
+                            theme={theme}
                           >
-                            <ShoppingCart className="w-4 h-4 text-white/90" />
+                            <ShoppingCart className="h-4 w-4" />
                             SALE
-                          </MechanicalButton>
+                          </ActionButton>
 
-                          <MechanicalButton
-                            className="group border-white/10 hover:border-white/20"
+                          <ActionButton
                             onClick={async () => {
-                              const ok = window.confirm(`Archive ${item.sku}?`);
-                              if (!ok) return;
+                              const isConfirmed = window.confirm(`Archive ${item.sku}?`);
+
+                              if (!isConfirmed) {
+                                return;
+                              }
+
                               try {
-                                await archiveItem.mutateAsync({ id: item._id, note: 'Operator archived item' });
-                              } catch (e) {
-                                console.error(e);
-                                alert('Archive failed.');
+                                await archiveItem.mutateAsync({
+                                  id: item._id,
+                                  note: 'Operator archived item'
+                                });
+                              } catch (error) {
+                                console.error(error);
+                                window.alert('Archive failed.');
                               }
                             }}
+                            theme={theme}
                           >
-                            <Archive className="w-4 h-4 text-white/80 group-hover:text-crimson transition" />
+                            <Archive className="h-4 w-4" />
                             Archive
-                          </MechanicalButton>
+                          </ActionButton>
                         </>
                       ) : (
                         <>
-                          <MechanicalButton
-                            className="group border-white/10 hover:border-white/20"
+                          <ActionButton
                             onClick={async () => {
-                              const ok = window.confirm(`Restore ${item.sku} to active inventory?`);
-                              if (!ok) return;
+                              const isConfirmed = window.confirm(
+                                `Restore ${item.sku} to active inventory?`
+                              );
+
+                              if (!isConfirmed) {
+                                return;
+                              }
+
                               try {
-                                await restoreItem.mutateAsync({ id: item._id, note: 'Operator restored item' });
-                              } catch (e) {
-                                console.error(e);
-                                alert('Restore failed.');
+                                await restoreItem.mutateAsync({
+                                  id: item._id,
+                                  note: 'Operator restored item'
+                                });
+                              } catch (error) {
+                                console.error(error);
+                                window.alert('Restore failed.');
                               }
                             }}
+                            theme={theme}
                           >
-                            <Undo2 className="w-4 h-4 text-white/80 group-hover:text-crimson transition" />
+                            <Undo2 className="h-4 w-4" />
                             Restore
-                          </MechanicalButton>
+                          </ActionButton>
 
-                          <MechanicalButton
-                            className="group border-crimson/30 hover:border-crimson/60 bg-crimson/10"
+                          <ActionButton
+                            variant="danger"
                             onClick={async () => {
-                              const ok = window.confirm(`Permanently delete ${item.sku}? This cannot be undone.`);
-                              if (!ok) return;
+                              const isConfirmed = window.confirm(
+                                `Permanently delete ${item.sku}? This cannot be undone.`
+                              );
+
+                              if (!isConfirmed) {
+                                return;
+                              }
+
                               try {
                                 await deletePermanently.mutateAsync({ id: item._id });
-                              } catch (e) {
-                                console.error(e);
-                                alert('Delete failed (admin only).');
+                              } catch (error) {
+                                console.error(error);
+                                window.alert('Delete failed (admin only).');
                               }
                             }}
+                            theme={theme}
                           >
-                            <Trash2 className="w-4 h-4 text-white/90" />
+                            <Trash2 className="h-4 w-4" />
                             Delete
-                          </MechanicalButton>
+                          </ActionButton>
                         </>
                       )}
                     </div>
-                  </RedlineRow>
+                  </InventoryRow>
                 );
               })
-            )}
-
-            {!inventoryLoading && inventory.length === 0 && (
-              <div className="text-white/50 py-8 text-center">No items found.</div>
+            ) : (
+              <div className={classNames('py-10 text-center text-sm', classes.TEXT_SECONDARY)}>No items found.</div>
             )}
           </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Create modal */}
-      <Modal open={createOpen} title="Add Inventory Part" onClose={() => setCreateOpen(false)}>
-        <form className="space-y-3" onSubmit={onCreate}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <Modal open={createOpen} title="Add Inventory Part" onClose={() => setCreateOpen(false)} theme={theme}>
+        <form className="space-y-4" onSubmit={handleCreateItem}>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="text-xs text-white/60">SKU</span>
-              <input className="input-mech mt-2" name="sku" placeholder="e.g. IMS-ABC123" required />
-              <div className="text-[11px] text-white/40 mt-1">Tip: Use uppercase + hyphens.</div>
+              <span className={classNames('text-sm font-medium', classes.TEXT_TERTIARY)}>SKU</span>
+              <input
+                className={classNames(classes.INPUT, 'mt-2')}
+                name="sku"
+                placeholder="IMS-ABC123"
+                required
+              />
+              <div className={classNames('mt-2 text-xs', classes.TEXT_SECONDARY)}>Use uppercase letters and hyphens.</div>
             </label>
 
             <label className="block">
-              <span className="text-xs text-white/60">Category</span>
+              <span className={classNames('text-sm font-medium', classes.TEXT_TERTIARY)}>Category</span>
               <input
-                className="input-mech mt-2"
+                className={classNames(classes.INPUT, 'mt-2')}
                 name="category"
-                placeholder="e.g. Engine, Electrical, Helmet"
+                placeholder="Engine"
                 list="category_list"
                 required
               />
               <datalist id="category_list">
-                {categoryOptions.map((c) => (
-                  <option key={c} value={c} />
+                {categoryOptions.map((item) => (
+                  <option key={item} value={item} />
                 ))}
               </datalist>
             </label>
           </div>
 
           <label className="block">
-            <span className="text-xs text-white/60">Name</span>
-            <input className="input-mech mt-2" name="name" placeholder="e.g. Carbon Weave Helmet" required />
+            <span className={classNames('text-sm font-medium', classes.TEXT_TERTIARY)}>Name</span>
+            <input
+              className={classNames(classes.INPUT, 'mt-2')}
+              name="name"
+              placeholder="Carbon Weave Helmet"
+              required
+            />
           </label>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="text-xs text-white/60">Bin Location</span>
-              <input className="input-mech mt-2" name="bin_location" placeholder="e.g. A-03-12" required />
+              <span className={classNames('text-sm font-medium', classes.TEXT_TERTIARY)}>Bin Location</span>
+              <input
+                className={classNames(classes.INPUT, 'mt-2')}
+                name="bin_location"
+                placeholder="A-03-12"
+                required
+              />
             </label>
+
             <label className="block">
-              <span className="text-xs text-white/60">Low-stock Threshold</span>
-              <input className="input-mech mt-2" type="number" name="low_stock_threshold" defaultValue={5} min={0} />
+              <span className={classNames('text-sm font-medium', classes.TEXT_TERTIARY)}>Low-stock Threshold</span>
+              <input
+                className={classNames(classes.INPUT, 'mt-2')}
+                type="number"
+                name="low_stock_threshold"
+                defaultValue={5}
+                min={0}
+              />
             </label>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <label className="block">
-              <span className="text-xs text-white/60">Price (PHP)</span>
-              <input className="input-mech mt-2" type="number" name="price_php" defaultValue={0} min={0} />
+              <span className={classNames('text-sm font-medium', classes.TEXT_TERTIARY)}>Price (PHP)</span>
+              <input
+                className={classNames(classes.INPUT, 'mt-2')}
+                type="number"
+                name="price_php"
+                defaultValue={0}
+                min={0}
+              />
             </label>
+
             <label className="block">
-              <span className="text-xs text-white/60">Cost (PHP)</span>
-              <input className="input-mech mt-2" type="number" name="cost_php" defaultValue={0} min={0} />
+              <span className={classNames('text-sm font-medium', classes.TEXT_TERTIARY)}>Cost (PHP)</span>
+              <input
+                className={classNames(classes.INPUT, 'mt-2')}
+                type="number"
+                name="cost_php"
+                defaultValue={0}
+                min={0}
+              />
             </label>
+
             <label className="block">
-              <span className="text-xs text-white/60">Qty On Hand</span>
-              <input className="input-mech mt-2" type="number" name="quantity_on_hand" defaultValue={0} min={0} />
+              <span className={classNames('text-sm font-medium', classes.TEXT_TERTIARY)}>Qty On Hand</span>
+              <input
+                className={classNames(classes.INPUT, 'mt-2')}
+                type="number"
+                name="quantity_on_hand"
+                defaultValue={0}
+                min={0}
+              />
             </label>
           </div>
 
-          <div className="pt-2 flex gap-2">
-            <MechanicalButton className="btn-crimson w-full" type="submit" disabled={createItem.isPending}>
-              {createItem.isPending ? 'Forging...' : 'Create Part'}
-            </MechanicalButton>
-            <MechanicalButton className="w-full" type="button" onClick={() => setCreateOpen(false)}>
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+            <ActionButton
+              variant="primary"
+              type="submit"
+              className="w-full"
+              disabled={createItem.isPending}
+              theme={theme}
+            >
+              {createItem.isPending ? 'Creating...' : 'Create Part'}
+            </ActionButton>
+
+            <ActionButton className="w-full" onClick={() => setCreateOpen(false)} type="button" theme={theme}>
               Cancel
-            </MechanicalButton>
+            </ActionButton>
           </div>
 
-          {createItem.isError && (
-            <div className="glass border-crimson/40 bg-crimson/10 p-3 text-sm text-white/90">
+          {createItem.isError ? (
+            <div className={classNames('rounded-2xl border px-4 py-3 text-sm', isDark ? 'border-red-800 bg-red-950/50 text-red-400' : 'border-red-200 bg-red-50 text-red-700')}>
               {createItem.error?.response?.data?.error?.message || 'Failed to create item.'}
             </div>
-          )}
+          ) : null}
         </form>
       </Modal>
     </div>

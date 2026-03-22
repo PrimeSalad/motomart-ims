@@ -1,15 +1,23 @@
 /*
- * Carbon & Crimson IMS
  * File: src/views/login_page.jsx
- * Version: 2.0.0 "Obsidian"
- * Refactor: God Mode - Ultra-premium UX, enhanced security, and fluid animations.
+ * Description: Minimalist dark-mode login page with red-accent theme,
+ * Poppins and Questrial typography, preserved authentication flow,
+ * and simplified premium UI.
+ * Version: 3.0.0
  */
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Lock, Mail, LogIn, Eye, EyeOff, 
-  ShieldAlert, X, CheckCircle2, 
-  ArrowRight, Fingerprint, Activity 
+import {
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  ShieldAlert,
+  X,
+  CheckCircle2,
+  ArrowRight,
+  Fingerprint
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createApiClient } from '../lib/api_client';
@@ -17,325 +25,557 @@ import { useAuth } from '../state/auth_context';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Animation Variants
+const FONT_LINK_ID = 'login-page-fonts-v3';
+const FONT_PRECONNECT_ONE_ID = 'login-page-preconnect-1';
+const FONT_PRECONNECT_TWO_ID = 'login-page-preconnect-2';
+
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.2 }
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.08
+    }
   }
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } }
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.45, ease: 'easeOut' }
+  }
 };
 
+/**
+ * Append link element only once.
+ * @param {{ id: string, rel: string, href: string, crossOrigin?: string }} options
+ * @returns {void}
+ */
+function appendLinkTag(options) {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  if (document.getElementById(options.id)) {
+    return;
+  }
+
+  const linkElement = document.createElement('link');
+  linkElement.id = options.id;
+  linkElement.rel = options.rel;
+  linkElement.href = options.href;
+
+  if (options.crossOrigin) {
+    linkElement.crossOrigin = options.crossOrigin;
+  }
+
+  document.head.appendChild(linkElement);
+}
+
+/**
+ * Load Google Fonts dynamically for this page.
+ * @returns {void}
+ */
+function useLoginFonts() {
+  useEffect(() => {
+    appendLinkTag({
+      id: FONT_PRECONNECT_ONE_ID,
+      rel: 'preconnect',
+      href: 'https://fonts.googleapis.com'
+    });
+
+    appendLinkTag({
+      id: FONT_PRECONNECT_TWO_ID,
+      rel: 'preconnect',
+      href: 'https://fonts.gstatic.com',
+      crossOrigin: 'anonymous'
+    });
+
+    appendLinkTag({
+      id: FONT_LINK_ID,
+      rel: 'stylesheet',
+      href:
+        'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Questrial&display=swap'
+    });
+  }, []);
+}
+
+/**
+ * Combine class names safely.
+ * @param  {...string} values
+ * @returns {string}
+ */
+function classNames(...values) {
+  return values.filter(Boolean).join(' ');
+}
+
 export function LoginPage() {
+  useLoginFonts();
+
   const { setAuth, token } = useAuth();
   const navigate = useNavigate();
   const api = useMemo(() => createApiClient({ token: null }), []);
 
-  
-  const [form, setForm] = useState({ email: 'admin@ims.local', password: 'Admin#1234' });
+  const [form, setForm] = useState({
+    email: 'admin@ims.local',
+    password: 'Admin#1234'
+  });
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState(null);
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const [forgotModal, setForgotModal] = useState({ open: false, email: '', sent: false, loading: false });
+  const [forgotModal, setForgotModal] = useState({
+    open: false,
+    email: '',
+    sent: false,
+    loading: false
+  });
 
   const emailRef = useRef(null);
 
   useEffect(() => {
-    if (token) navigate('/', { replace: true });
+    if (token) {
+      navigate('/', { replace: true });
+    }
+
     emailRef.current?.focus?.();
   }, [token, navigate]);
 
-  const validate = () => {
-    if (!form.email || !EMAIL_RE.test(form.email)) return 'Enter a valid corporate email.';
-    if (!form.password || form.password.length < 6) return 'Password security threshold not met (min 6 chars).';
-    return null;
-  };
+  /**
+   * Validate login form.
+   * @returns {string | null}
+   */
+  function validate() {
+    if (!form.email || !EMAIL_RE.test(form.email)) {
+      return 'Enter a valid email address.';
+    }
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+    if (!form.password || form.password.length < 6) {
+      return 'Password must be at least 6 characters.';
+    }
+
+    return null;
+  }
+
+  /**
+   * Handle login submit.
+   * @param {React.FormEvent<HTMLFormElement>} event
+   * @returns {Promise<void>}
+   */
+  async function handleLogin(event) {
+    event.preventDefault();
     setError(null);
-    const vError = validate();
-    if (vError) return setError(vError);
+
+    const validationError = validate();
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
     setLoading(true);
+
     try {
-      const res = await api.post('/auth/login', { ...form });
-      setAuth(res.data.data, { remember });
+      const response = await api.post('/auth/login', { ...form });
+      setAuth(response.data.data, { remember });
       navigate('/', { replace: true });
-    } catch (err) {
-      setError(err?.response?.data?.error?.message || err?.message || 'Authentication failed.');
+    } catch (requestError) {
+      setError(
+        requestError?.response?.data?.error?.message ||
+          requestError?.message ||
+          'Authentication failed.'
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleForgotSubmit = async (e) => {
-    e.preventDefault();
-    if (!EMAIL_RE.test(forgotModal.email)) return;
-    
-    setForgotModal(prev => ({ ...prev, loading: true }));
+  /**
+   * Handle forgot password request.
+   * @param {React.FormEvent<HTMLFormElement>} event
+   * @returns {Promise<void>}
+   */
+  async function handleForgotSubmit(event) {
+    event.preventDefault();
+
+    if (!EMAIL_RE.test(forgotModal.email)) {
+      return;
+    }
+
+    setForgotModal((previousState) => ({
+      ...previousState,
+      loading: true
+    }));
+
     try {
       await api.post('/auth/forgot-password', { email: forgotModal.email });
-      setForgotModal(prev => ({ ...prev, sent: true, loading: false }));
+      setForgotModal((previousState) => ({
+        ...previousState,
+        sent: true,
+        loading: false
+      }));
     } catch {
-      // Intentional silent failure/success mask for security
-      setForgotModal(prev => ({ ...prev, sent: true, loading: false }));
+      setForgotModal((previousState) => ({
+        ...previousState,
+        sent: true,
+        loading: false
+      }));
     }
-  };
+  }
 
   return (
-    <div className="selection:bg-red-500/30 min-h-screen w-full bg-[#030305] text-slate-200 relative overflow-hidden font-sans">
-      
-      {/* --- ELITE BACKGROUND ARCHITECTURE --- */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] h-[600px] w-[600px] rounded-full bg-red-600/10 blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] h-[600px] w-[600px] rounded-full bg-rose-600/10 blur-[120px]" />
-        
-        {/* Grid Overlay */}
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]" />
+    <div
+      className="relative min-h-screen overflow-hidden bg-[#070707] text-white"
+      style={{ fontFamily: "'Poppins', sans-serif" }}
+    >
+      {/* Background */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[-12%] top-[-12%] h-[28rem] w-[28rem] rounded-full bg-red-700/18 blur-[130px]" />
+        <div className="absolute bottom-[-12%] right-[-12%] h-[26rem] w-[26rem] rounded-full bg-red-500/10 blur-[140px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05),transparent_35%)]" />
+        <div className="absolute inset-0 opacity-[0.05] [background-image:linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] [background-size:36px_36px]" />
       </div>
 
-      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-6 py-12">
-        <div className="grid w-full grid-cols-1 gap-16 lg:grid-cols-2 items-center">
-          
-          {/* --- LEFT SIDE: BRAND EVANGELISM --- */}
-<motion.div 
-  variants={containerVariants}
-  initial="hidden"
-  animate="visible"
-  className="hidden lg:flex flex-col space-y-8"
->
-  <motion.div variants={itemVariants} className="flex items-center gap-3">
-    {/* Container for the Logo */}
-    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-lg shadow-red-500/20 overflow-hidden">
-      <img 
-        src="/img/logo.jpg" 
-        alt="MotoMart Logo" 
-        className="h-full w-full object-cover" 
-      />
-    </div>
-    
-    {/* Text Label */}
-    <span className="text-sm font-black tracking-[0.3em] uppercase bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">
-      MotoMart
-    </span>
-  </motion.div>
+      <main className="relative z-10 mx-auto flex min-h-screen max-w-7xl items-center px-5 py-8 sm:px-8 lg:px-10">
+        <div className="grid w-full grid-cols-1 gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+          {/* Left Content - HIDDEN ON MOBILE */}
+          <motion.section
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="hidden lg:flex flex-col justify-center"
+          >
+            <motion.div variants={itemVariants} className="mb-8 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                <img
+                  src="/img/logo.jpg"
+                  alt="MotoMart Logo"
+                  className="h-full w-full object-cover"
+                />
+              </div>
 
-            <motion.h1 variants={itemVariants} className="text-6xl font-black tracking-tight leading-[0.95] text-white">
-              Control the <br /> 
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-400 to-orange-400">
-                Inventory Flow.
-              </span>
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.32em] text-red-400">
+                  MotoMart
+                </div>
+                <div className="text-sm text-zinc-400">Inventory Management System</div>
+              </div>
+            </motion.div>
+
+            <motion.h1
+              variants={itemVariants}
+              className="max-w-2xl text-4xl leading-[0.95] text-white sm:text-5xl lg:text-6xl"
+              style={{ fontFamily: "'Questrial', sans-serif" }}
+            >
+              Minimal access,
+              <br />
+              maximum control.
             </motion.h1>
 
-            <motion.p variants={itemVariants} className="text-lg text-slate-400 max-w-md leading-relaxed">
-              Experience a high-fidelity management interface designed for speed, precision, and absolute data integrity.
+            <motion.p
+              variants={itemVariants}
+              className="mt-6 max-w-xl text-sm leading-7 text-zinc-400 sm:text-base"
+            >
+              A cleaner login experience for your inventory operations, built with a
+              focused dark interface and sharp red accents for a modern command-center feel.
             </motion.p>
 
-            <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
+            <motion.div
+              variants={itemVariants}
+              className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3"
+            >
               {[
-                { label: 'Real-time Sync', icon: CheckCircle2 },
-                { label: 'End-to-End Encryption', icon: Lock },
+                'Secure authentication',
+                'Fast session access',
+                'Minimal visual noise'
               ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                  <item.icon className="h-4 w-4 text-red-500" />
-                  {item.label}
+                <div
+                  key={item}
+                  className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4 text-sm text-zinc-300 backdrop-blur-xl"
+                >
+                  {item}
                 </div>
               ))}
             </motion.div>
-          </motion.div>
+          </motion.section>
 
-          {/* --- RIGHT SIDE: THE TERMINAL --- */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="relative"
+          {/* Right Card */}
+          <motion.section
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: 'easeOut' }}
+            className="flex items-center justify-center"
           >
-            {/* Decorative Glow */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-red-500/20 to-rose-500/20 rounded-[32px] blur-xl opacity-50" />
-            
-            <div className="relative w-full max-w-md mx-auto rounded-[32px] border border-white/10 bg-white/[0.02] backdrop-blur-2xl p-8 shadow-2xl">
-              
-              <header className="flex justify-between items-end mb-8">
-                <div>
-                  <h2 className="text-3xl font-bold text-white tracking-tight">Login</h2>
-                  <p className="text-slate-400 text-sm mt-1">Access the IMS Command Center</p>
-                </div>
-                <Fingerprint className="h-10 w-10 text-red-500/50" />
-              </header>
+            <div className="relative w-full max-w-md">
+              <div className="absolute -inset-[1px] rounded-[32px] bg-gradient-to-b from-red-500/25 via-white/5 to-transparent blur-xl" />
 
-              <AnimatePresence mode="wait">
-                {error && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mb-6 overflow-hidden"
-                  >
-                    <div className="flex items-center gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-                      <ShieldAlert className="h-5 w-5 shrink-0" />
-                      {error}
+              <div className="relative rounded-[32px] border border-white/10 bg-black/40 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:p-8">
+                <div className="mb-8 flex items-start justify-between gap-4">
+                  <div>
+                    <div className="text-[11px] uppercase tracking-[0.28em] text-zinc-500">
+                      Welcome Back
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    <h2
+                      className="mt-2 text-3xl text-white"
+                      style={{ fontFamily: "'Questrial', sans-serif" }}
+                    >
+                      Login
+                    </h2>
+                    <p className="mt-2 text-sm text-zinc-400">
+                      Sign in to access the dashboard.
+                    </p>
+                  </div>
 
-              <form onSubmit={handleLogin} className="space-y-5">
-                {/* Email Input */}
-                <div className="group space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 group-focus-within:text-red-400 transition-colors">
-                    Work Identity
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-red-400 transition-colors" />
-                    <input
-                      ref={emailRef}
-                      type="email"
-                      required
-                      value={form.email}
-                      onChange={e => setForm({...form, email: e.target.value})}
-                      className="w-full rounded-2xl border border-white/5 bg-white/[0.03] px-12 py-4 text-sm outline-none ring-2 ring-transparent focus:ring-red-500/20 focus:border-red-500/40 transition-all placeholder:text-slate-600"
-                      placeholder="name@company.com"
-                    />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10">
+                    <Fingerprint className="h-5 w-5 text-red-400" />
                   </div>
                 </div>
 
-                {/* Password Input */}
-                <div className="group space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 group-focus-within:text-red-400 transition-colors">
-                      Secret Key
+                <AnimatePresence mode="wait">
+                  {error ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      className="mb-5 rounded-2xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+                    >
+                      <div className="flex items-start gap-3">
+                        <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                        <span>{error}</span>
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+
+                <form onSubmit={handleLogin} className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-medium uppercase tracking-[0.22em] text-zinc-500">
+                      Email
                     </label>
-                    {capsLockOn && <span className="text-[10px] text-orange-400 animate-pulse font-bold uppercase">Caps Lock Active</span>}
+
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                      <input
+                        ref={emailRef}
+                        type="email"
+                        required
+                        value={form.email}
+                        onChange={(event) =>
+                          setForm((previousState) => ({
+                            ...previousState,
+                            email: event.target.value
+                          }))
+                        }
+                        placeholder="name@company.com"
+                        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-11 py-3.5 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-red-500/35 focus:bg-white/[0.04] focus:ring-2 focus:ring-red-500/10"
+                      />
+                    </div>
                   </div>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-red-400 transition-colors" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={form.password}
-                      onChange={e => setForm({...form, password: e.target.value})}
-                      onKeyUp={e => setCapsLockOn(e.getModifierState('CapsLock'))}
-                      className="w-full rounded-2xl border border-white/5 bg-white/[0.03] px-12 py-4 text-sm outline-none ring-2 ring-transparent focus:ring-red-500/20 focus:border-red-500/40 transition-all placeholder:text-slate-600"
-                      placeholder="••••••••"
-                    />
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="text-[11px] font-medium uppercase tracking-[0.22em] text-zinc-500">
+                        Password
+                      </label>
+
+                      {capsLockOn ? (
+                        <span className="text-[10px] uppercase tracking-[0.16em] text-amber-400">
+                          Caps Lock On
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={form.password}
+                        onChange={(event) =>
+                          setForm((previousState) => ({
+                            ...previousState,
+                            password: event.target.value
+                          }))
+                        }
+                        onKeyUp={(event) =>
+                          setCapsLockOn(event.getModifierState('CapsLock'))
+                        }
+                        placeholder="••••••••"
+                        className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-11 py-3.5 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-red-500/35 focus:bg-white/[0.04] focus:ring-2 focus:ring-red-500/10"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((previousState) => !previousState)}
+                        className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-zinc-500 transition hover:bg-white/5 hover:text-white"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 pt-1">
+                    <label className="flex cursor-pointer items-center gap-3">
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={remember}
+                        onChange={(event) => setRemember(event.target.checked)}
+                      />
+
+                      <span
+                        className={classNames(
+                          'flex h-5 w-5 items-center justify-center rounded-md border transition',
+                          remember
+                            ? 'border-red-500 bg-red-500 text-black'
+                            : 'border-white/15 bg-white/[0.02] text-transparent'
+                        )}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      </span>
+
+                      <span className="text-sm text-zinc-400">Remember me</span>
+                    </label>
+
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-white transition-colors"
+                      onClick={() =>
+                        setForgotModal((previousState) => ({
+                          ...previousState,
+                          open: true
+                        }))
+                      }
+                      className="text-xs uppercase tracking-[0.18em] text-red-400 transition hover:text-red-300"
                     >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      Forgot?
                     </button>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-between py-2">
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <div className={`h-5 w-5 rounded border-2 flex items-center justify-center transition-all ${remember ? 'bg-red-500 border-red-500' : 'border-white/10 group-hover:border-white/30'}`}>
-                      {remember && <CheckCircle2 className="h-3.5 w-3.5 text-black stroke-[4]" />}
-                    </div>
-                    <input type="checkbox" className="hidden" checked={remember} onChange={e => setRemember(e.target.checked)} />
-                    <span className="text-xs font-medium text-slate-400">Keep session active</span>
-                  </label>
-                  <button 
-                    type="button" 
-                    onClick={() => setForgotModal({ ...forgotModal, open: true })}
-                    className="text-xs font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest"
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="group relative w-full overflow-hidden rounded-2xl bg-red-500 px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Lost Access?
+                    <span className="flex items-center justify-center gap-2">
+                      {loading ? 'Authenticating...' : 'Login'}
+                      {!loading ? (
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      ) : null}
+                    </span>
                   </button>
+                </form>
+
+                <div className="mt-6 border-t border-white/10 pt-5 text-center">
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-zinc-600">
+                    Developed by DotOrbit
+                  </p>
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="relative overflow-hidden w-full group rounded-2xl bg-white px-8 py-4 text-sm font-black uppercase tracking-widest text-black transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    {loading ? 'Authenticating...' : (
-                      <>
-                        Initiate Login <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                      </>
-                    )}
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-rose-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </button>
-              </form>
-
-              <footer className="mt-8 pt-6 border-t border-white/5 text-center">
-                <p className="text-[10px] text-slate-600 uppercase tracking-widest">
-                  Powered by: DotOrbit Software
-                </p>
-              </footer>
+              </div>
             </div>
-          </motion.div>
+          </motion.section>
         </div>
       </main>
 
-      {/* --- FORGOT PASSWORD MODAL --- */}
+      {/* Forgot Password Modal */}
       <AnimatePresence>
-        {forgotModal.open && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md" 
-              onClick={() => setForgotModal(f => ({ ...f, open: false }))} 
-            />
+        {forgotModal.open ? (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 sm:p-6">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() =>
+                setForgotModal((previousState) => ({
+                  ...previousState,
+                  open: false
+                }))
+              }
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 14 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md rounded-[32px] border border-white/10 bg-[#0a0a0f] p-8 shadow-3xl"
+              exit={{ opacity: 0, scale: 0.96, y: 14 }}
+              transition={{ duration: 0.2 }}
+              className="relative z-10 w-full max-w-md rounded-[30px] border border-white/10 bg-[#0c0c0d] p-6 shadow-[0_20px_70px_rgba(0,0,0,0.55)] sm:p-7"
             >
-              <button 
-                onClick={() => setForgotModal(f => ({ ...f, open: false }))}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 transition-colors"
+              <button
+                type="button"
+                onClick={() =>
+                  setForgotModal((previousState) => ({
+                    ...previousState,
+                    open: false
+                  }))
+                }
+                className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-xl text-zinc-500 transition hover:bg-white/5 hover:text-white"
+                aria-label="Close forgot password modal"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
 
-              <h3 className="text-2xl font-bold text-white mb-2">Recovery Service</h3>
-              <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-                Provide your registered email. If validated, a temporal reset token will be dispatched.
-              </p>
+              <div className="pr-10">
+                <div className="text-[11px] uppercase tracking-[0.22em] text-red-400">
+                  Account Recovery
+                </div>
+                <h3
+                  className="mt-2 text-2xl text-white"
+                  style={{ fontFamily: "'Questrial', sans-serif" }}
+                >
+                  Reset access
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-400">
+                  Enter your registered email. If valid, you’ll receive a recovery link.
+                </p>
+              </div>
 
               {!forgotModal.sent ? (
-                <form onSubmit={handleForgotSubmit} className="space-y-4">
+                <form onSubmit={handleForgotSubmit} className="mt-6 space-y-4">
                   <input
                     type="email"
                     required
                     value={forgotModal.email}
-                    onChange={e => setForgotModal({...forgotModal, email: e.target.value})}
+                    onChange={(event) =>
+                      setForgotModal((previousState) => ({
+                        ...previousState,
+                        email: event.target.value
+                      }))
+                    }
                     placeholder="name@company.com"
-                    className="w-full rounded-2xl border border-white/5 bg-white/[0.03] px-6 py-4 text-sm outline-none focus:border-red-500/50 transition-all"
+                    className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-red-500/35 focus:ring-2 focus:ring-red-500/10"
                   />
-                  <button 
+
+                  <button
+                    type="submit"
                     disabled={forgotModal.loading}
-                    className="w-full rounded-2xl bg-red-500 py-4 text-sm font-black uppercase text-black hover:bg-red-400 transition-colors disabled:opacity-50"
+                    className="w-full rounded-2xl bg-red-500 px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {forgotModal.loading ? 'Processing...' : 'Request Token'}
+                    {forgotModal.loading ? 'Processing...' : 'Send recovery link'}
                   </button>
                 </form>
               ) : (
-                <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-6 text-center">
-                  <CheckCircle2 className="h-12 w-12 text-emerald-400 mx-auto mb-4" />
-                  <p className="text-emerald-100 font-bold mb-1">Transmission Successful</p>
-                  <p className="text-emerald-100/60 text-xs">Check your secure inbox for the 30-minute recovery link.</p>
+                <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-5 py-5 text-center">
+                  <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-400" />
+                  <p className="mt-3 text-sm font-semibold text-emerald-100">
+                    Recovery request received
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-emerald-200/70">
+                    Check your email for the reset instructions.
+                  </p>
                 </div>
               )}
             </motion.div>
           </div>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   );
