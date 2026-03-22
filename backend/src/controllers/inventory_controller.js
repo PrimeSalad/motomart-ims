@@ -86,7 +86,10 @@ async function createItem(req, res, next) {
     low_stock_threshold: Math.max(0, Number(body.low_stock_threshold ?? 5))
   }).select().single();
 
-  if (error) return next(new AppError('Failed to create item.', 500, 'SERVER_ERROR'));
+  if (error) {
+    console.error('Create item error:', error);
+    return next(new AppError(`Failed to create item: ${error.message}`, 500, 'SERVER_ERROR'));
+  }
 
   if (Array.isArray(body.compatibility) && body.compatibility.length > 0) {
     const comps = body.compatibility.map(c => ({
