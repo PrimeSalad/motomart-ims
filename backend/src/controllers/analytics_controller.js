@@ -1,23 +1,26 @@
 /*
  * Carbon & Crimson IMS
  * File: src/controllers/analytics_controller.js
- * Version: 1.1.1
- * Purpose: Dashboard analytics endpoints.
- *
- * Changelog:
- * - Added "todaySales" aggregation (units + revenue + per-item breakdown) based on SALE stock moves.
+ * Version: 2.0.0
+ * Purpose: Dashboard analytics endpoints (Supabase).
  */
 
 'use strict';
-
-const { InventoryItem } = require('../models/inventory_item_model');
+const { getDb } = require('../config/db');
 
 function isoDateKey(d) {
   return new Date(d).toISOString().slice(0, 10);
 }
 
 async function summary(_req, res) {
-  const items = await InventoryItem.find({ is_archived: false }).lean();
+  const supabase = getDb();
+  
+  const { data: items, error: itemsError } = await supabase.from('inventory_items').select('*').eq('is_archived', false);
+  const { data: audits, error: auditsError } = await supabase.from('inventory_audit_logs').select('*');
+
+  if (itemsError || auditsError) {
+    return res.status(500).json({ ok: false, message: 'Failed to fetch analytics data' });
+  }
 
   const topSelling = items
     .map((i) => ({
@@ -29,8 +32,7 @@ async function summary(_req, res) {
     .sort((a, b) => b.sold_units - a.sold_units)
     .slice(0, 8);
 
-  // Revenue trend: last 7 days from audit_log SALE moves
-  const buckets = new Map(); // yyyy-mm-dd -> revenue
+  const buckets = new Map();
   const now = new Date();
   for (let d = 0; d < 7; d += 1) {
     const day = new Date(now);
@@ -39,46 +41,47 @@ async function summary(_req, res) {
     buckets.set(key, 0);
   }
 
-  // Today's sales breakdown (same SALE detection as trend)
   const todayKey = isoDateKey(now);
-  const todaySalesBySku = new Map(); // sku -> { sku, name, units, revenue_php }
+  const todaySalesBySku = new Map();
   let todayUnits = 0;
   let todayRevenue = 0;
 
-  for (const item of items) {
-    const audit = Array.isArray(item.audit_log) ? item.audit_log : [];
-    for (const entry of audit) {
-      if (entry.action !== 'STOCK_MOVE') continue;
+  const itemsMap = new Map(items.map(i => [i.id, i]));
 
-      const key = isoDateKey(entry.ts);
-      const note = String(entry.note || '').toLowerCase();
-      const wasSale = note.includes('sale');
-      if (!wasSale) continue;
+  for (const entry of audits) {
+    if (entry.action !== 'STOCK_MOVE') continue;
 
-      const units = Math.abs(Number(entry.delta || 0));
-      if (!Number.isFinite(units) || units <= 0) continue;
+    const key = isoDateKey(entry.created_at);
+    const note = String(entry.note || '').toLowerCase();
+    const wasSale = note.includes('sale');
+    if (!wasSale) continue;
 
-      const revenue = units * Number(item.price_php || 0);
+    const units = Math.abs(Number(entry.delta || 0));
+    if (!Number.isFinite(units) || units <= 0) continue;
 
-      if (buckets.has(key)) {
-        buckets.set(key, (buckets.get(key) || 0) + revenue);
-      }
+    const item = itemsMap.get(entry.item_id);
+    if (!item) continue;
 
-      if (key === todayKey) {
-        todayUnits += units;
-        todayRevenue += revenue;
+    const revenue = units * Number(item.price_php || 0);
 
-        const sku = String(item.sku || '');
-        const cur = todaySalesBySku.get(sku) || {
-          sku,
-          name: item.name,
-          units: 0,
-          revenue_php: 0,
-        };
-        cur.units += units;
-        cur.revenue_php += revenue;
-        todaySalesBySku.set(sku, cur);
-      }
+    if (buckets.has(key)) {
+      buckets.set(key, (buckets.get(key) || 0) + revenue);
+    }
+
+    if (key === todayKey) {
+      todayUnits += units;
+      todayRevenue += revenue;
+
+      const sku = String(item.sku || '');
+      const cur = todaySalesBySku.get(sku) || {
+        sku,
+        name: item.name,
+        units: 0,
+        revenue_php: 0,
+      };
+      cur.units += units;
+      cur.revenue_php += revenue;
+      todaySalesBySku.set(sku, cur);
     }
   }
 
@@ -86,7 +89,6 @@ async function summary(_req, res) {
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([date, revenue_php]) => ({ date, revenue_php }));
 
-  // Stock-to-sales ratio (per category)
   const byCategory = new Map();
   for (const item of items) {
     const cat = item.category || 'Unknown';
@@ -101,13 +103,12 @@ async function summary(_req, res) {
     ratio: x.sold > 0 ? Number((x.stock / x.sold).toFixed(2)) : x.stock,
   }));
 
-  // Low stock list
   const lowStock = items
     .filter((i) => (i.quantity_on_hand || 0) <= (i.low_stock_threshold || 0))
     .sort((a, b) => (a.quantity_on_hand || 0) - (b.quantity_on_hand || 0))
     .slice(0, 12)
     .map((i) => ({
-      id: String(i._id),
+      id: String(i.id),
       sku: i.sku,
       name: i.name,
       category: i.category,

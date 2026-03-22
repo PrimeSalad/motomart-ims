@@ -1,8 +1,8 @@
 /*
  * Carbon & Crimson IMS
  * File: src/middleware/auth.js
- * Version: 1.0.0
- * Purpose: JWT auth + RBAC.
+ * Version: 2.0.0
+ * Purpose: JWT auth + RBAC using Supabase.
  */
 
 'use strict';
@@ -10,7 +10,7 @@
 const jwt = require('jsonwebtoken');
 const { env } = require('../config/env');
 const { AppError } = require('../utils/app_error');
-const { User } = require('../models/user_model');
+const { getDb } = require('../config/db');
 
 async function requireAuth(req, _res, next) {
   const authHeader = req.headers.authorization || '';
@@ -22,16 +22,23 @@ async function requireAuth(req, _res, next) {
 
   try {
     const payload = jwt.verify(token, env.JWT_SECRET);
-    const user = await User.findById(payload.sub).lean();
-    if (!user) {
+    const supabase = getDb();
+    
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, role, full_name')
+      .eq('id', payload.sub)
+      .single();
+
+    if (error || !user) {
       return next(new AppError('Invalid token user.', 401, 'UNAUTHORIZED'));
     }
 
     req.user = {
-      id: String(user._id),
+      id: user.id,
       email: user.email,
       role: user.role,
-      name: user.name,
+      name: user.full_name,
     };
 
     return next();

@@ -1,43 +1,39 @@
 /*
  * Carbon & Crimson IMS
  * File: scripts/reset_admin.js
- * Version: 1.0.0
- * Purpose: Force-reset admin password.
+ * Version: 2.0.0
+ * Purpose: Force-reset admin password (Supabase).
  */
 
 'use strict';
-
 require('dotenv').config();
-const mongoose = require('mongoose');
-const {
-    User
-} = require('../src/models/user_model');
+const { createClient } = require('@supabase/supabase-js');
+const bcrypt = require('bcryptjs');
 
 async function main() {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    const mongoUri = process.env.MONGO_URI || "mongodb://localhost:27017/ims_db";
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required in .env');
+    }
 
-    await mongoose.connect(mongoUri);
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const password_hash = await bcrypt.hash("Admin#1234", 10);
+    const email = "admin@ims.local";
 
-    const password_hash = await User.hashPassword("Admin#1234");
+    const { data: existing } = await supabase.from('users').select('id').eq('email', email).single();
 
-    await User.updateOne({
-        email: "admin@ims.local"
-    }, {
-        $set: {
-            name: "Admin",
-            role: "admin",
-            password_hash
-        }
-    }, {
-        upsert: true
-    });
+    if (existing) {
+      await supabase.from('users').update({ full_name: "Admin", role: "super_admin", password_hash }).eq('id', existing.id);
+    } else {
+      await supabase.from('users').insert({ email, full_name: "Admin", role: "super_admin", password_hash });
+    }
 
     console.log("✅ Admin reset successful");
     console.log("Email: admin@ims.local");
     console.log("Password: Admin#1234");
-
-    await mongoose.disconnect();
+    console.log("Role: super_admin");
 }
 
 main().catch(err => {

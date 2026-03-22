@@ -15,13 +15,13 @@ require('dotenv').config();
 
 const http = require('http');
 const app = require('./src/app');
-const { connectMongo } = require('./src/config/db');
+const { connectDb } = require('./src/config/db');
 const { env } = require('./src/config/env');
 const { seedDefaultUsers } = require('./src/seed/seed_users');
 const { logger } = require('./src/utils/logger');
 
 async function bootstrap() {
-  await connectMongo(env.MONGO_URI);
+  await connectDb();
   await seedDefaultUsers();
 
   const server = http.createServer(app);

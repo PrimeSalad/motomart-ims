@@ -1,27 +1,34 @@
 /*
  * Carbon & Crimson IMS
  * File: src/config/db.js
- * Version: 1.0.0
- * Purpose: MongoDB connection helper.
+ * Version: 2.0.0
+ * Purpose: Supabase connection helper.
  */
 
 'use strict';
 
-const mongoose = require('mongoose');
+const { createClient } = require('@supabase/supabase-js');
 const { logger } = require('../utils/logger');
 
-async function connectMongo(mongoUri) {
-  if (!mongoUri) {
-    throw new Error('MONGO_URI is required');
+let supabase = null;
+
+async function connectDb() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required');
   }
 
-  mongoose.set('strictQuery', true);
-
-  await mongoose.connect(mongoUri, {
-    autoIndex: true,
-  });
-
-  logger.info('MongoDB connected');
+  supabase = createClient(supabaseUrl, supabaseKey);
+  logger.info('Supabase client initialized');
 }
 
-module.exports = { connectMongo };
+function getDb() {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
+  return supabase;
+}
+
+module.exports = { connectDb, getDb };

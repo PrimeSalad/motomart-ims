@@ -1,20 +1,20 @@
 /*
  * Carbon & Crimson IMS
  * File: src/seed/seed_users.js
- * Version: 1.1.0
- * Purpose: Seed default users safely (no crash if env missing).
+ * Version: 2.0.0
+ * Purpose: Seed default users safely (Supabase).
  */
 
 'use strict';
 
 const { env } = require('../config/env');
-const { User } = require('../models/user_model');
+const { getDb } = require('../config/db');
 const { logger } = require('../utils/logger');
+const bcrypt = require('bcryptjs');
 
 const DEFAULT_ADMIN_EMAIL = 'admin@ims.local';
 const DEFAULT_STAFF_EMAIL = 'staff@ims.local';
 
-// Safe defaults (dev only)
 const DEFAULT_ADMIN_PASSWORD = 'Admin12345!';
 const DEFAULT_STAFF_PASSWORD = 'Staff12345!';
 
@@ -29,30 +29,42 @@ function safePassword(value, fallback) {
 }
 
 async function ensureUser({ email, full_name, role, password }) {
-  const existing = await User.findOne({ email });
+  const supabase = getDb();
+  const { data: existing } = await supabase.from('users').select('id').eq('email', email).single();
   if (existing) return;
 
-  const password_hash = await User.hashPassword(password);
+  const password_hash = await bcrypt.hash(password, 10);
 
-  await User.create({
+  const { error } = await supabase.from('users').insert({
     email,
     full_name,
     role,
     password_hash,
   });
 
-  logger.info(`Seeded user: ${email} (${role})`);
+  if (error) {
+    logger.error(`Failed to seed user ${email}: ${error.message}`);
+  } else {
+    logger.info(`Seeded user: ${email} (${role})`);
+  }
 }
 
 async function seedDefaultUsers() {
-  // Use env if present, else fallback
   const adminEmail = safeEmail(env.SEED_ADMIN_EMAIL, DEFAULT_ADMIN_EMAIL);
   const staffEmail = safeEmail(env.SEED_STAFF_EMAIL, DEFAULT_STAFF_EMAIL);
 
   const adminPassword = safePassword(env.SEED_ADMIN_PASSWORD, DEFAULT_ADMIN_PASSWORD);
   const staffPassword = safePassword(env.SEED_STAFF_PASSWORD, DEFAULT_STAFF_PASSWORD);
 
-  // IMPORTANT: full_name should never be empty
+  // Super Admin
+  await ensureUser({
+    email: 'superadmin@ims.local',
+    full_name: 'Super Admin',
+    role: 'super_admin',
+    password: adminPassword,
+  });
+
+  // Regular Admin
   await ensureUser({
     email: adminEmail,
     full_name: 'System Admin',
@@ -60,6 +72,7 @@ async function seedDefaultUsers() {
     password: adminPassword,
   });
 
+  // Staff
   await ensureUser({
     email: staffEmail,
     full_name: 'Staff User',
