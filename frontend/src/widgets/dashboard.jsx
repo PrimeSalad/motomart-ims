@@ -248,7 +248,7 @@ function InventoryRow({ children, isLowStock = false, theme }) {
   return (
     <div
       className={classNames(
-        'grid grid-cols-12 gap-3 rounded-2xl border px-3 py-3 transition-all duration-200',
+        'grid grid-cols-12 gap-4 rounded-2xl border px-4 py-4 transition-all duration-200',
         isLowStock
           ? isDark
             ? 'border-red-900/50 bg-red-950/40 hover:bg-red-950/60'
@@ -876,16 +876,16 @@ export function Dashboard() {
             </div>
           </div>
 
-          <div className="mt-5 hidden grid-cols-12 gap-3 px-3 md:grid">
+          <div className="mt-6 hidden grid-cols-12 gap-4 px-4 md:grid">
             <div className={classNames(classes.TABLE_HEADER, 'col-span-2')}>SKU</div>
             <div className={classNames(classes.TABLE_HEADER, 'col-span-3')}>Name</div>
-            <div className={classNames(classes.TABLE_HEADER, 'col-span-1')}>Category</div>
+            <div className={classNames(classes.TABLE_HEADER, 'col-span-2')}>Category</div>
             <div className={classNames(classes.TABLE_HEADER, 'col-span-2')}>Bin</div>
-            <div className={classNames(classes.TABLE_HEADER, 'col-span-2')}>Stock</div>
+            <div className={classNames(classes.TABLE_HEADER, 'col-span-1')}>Stock</div>
             <div className={classNames(classes.TABLE_HEADER, 'col-span-2 text-right')}>Actions</div>
           </div>
 
-          <div className="mt-3 space-y-3">
+          <div className="mt-4 space-y-3">
             {inventoryLoading ? (
               <div className={classNames('py-10 text-center text-sm', classes.TEXT_SECONDARY)}>Loading inventory...</div>
             ) : inventoryList.length > 0 ? (
@@ -904,7 +904,7 @@ export function Dashboard() {
                       {item.name}
                     </div>
 
-                    <div className="col-span-6 md:col-span-1">
+                    <div className="col-span-6 md:col-span-2">
                       <span className={classNames('inline-flex rounded-full border px-3 py-1 text-xs', classes.BORDER, classes.BG_TERTIARY, classes.TEXT_TERTIARY)}>
                         {item.category}
                       </span>
@@ -914,51 +914,60 @@ export function Dashboard() {
                       {item.bin_location}
                     </div>
 
-                    <div className="col-span-12 md:col-span-2">
-                      <div
-                        className={classNames(
-                          'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs',
-                          isLowStock
-                            ? isDark
-                              ? 'border-red-800 bg-red-950/50 text-red-400'
-                              : 'border-red-200 bg-red-100 text-red-700'
-                            : isDark
-                              ? 'border-red-900/40 bg-stone-800 text-stone-300'
-                              : 'border-stone-200 bg-stone-100 text-stone-700'
-                        )}
-                      >
-                        <span className="font-semibold">{currentQuantity}</span>
-                        <span>/</span>
-                        <span>{thresholdQuantity}</span>
+                    <div className="col-span-12 md:col-span-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={classNames(
+                            'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold tabular-nums',
+                            isLowStock
+                              ? isDark
+                                ? 'border-red-800 bg-red-950/50 text-red-400'
+                                : 'border-red-300 bg-red-100 text-red-700'
+                              : isDark
+                                ? 'border-red-900/40 bg-stone-800 text-stone-300'
+                                : 'border-stone-200 bg-stone-100 text-stone-700'
+                          )}
+                        >
+                          {currentQuantity} / {thresholdQuantity}
+                        </span>
                         {isLowStock ? (
-                          <span className="inline-flex items-center gap-1 font-medium">
-                            <span className={classNames('h-2 w-2 rounded-full', isDark ? 'bg-red-500' : 'bg-red-500')} />
-                            Low
+                          <span className={classNames('flex h-5 w-5 items-center justify-center rounded-full', isDark ? 'bg-red-900/50' : 'bg-red-100')}>
+                            <span className={classNames('h-2 w-2 rounded-full', isDark ? 'bg-red-500' : 'bg-red-600')} />
                           </span>
                         ) : null}
                       </div>
                     </div>
 
-                    <div className="col-span-12 flex flex-wrap gap-2 md:col-span-2 md:justify-end">
+                    <div className="col-span-12 flex items-center justify-end gap-1.5 md:col-span-2">
                       {status === 'active' ? (
                         <>
-                          <ActionButton onClick={() => handleMoveStock({ id: item._id, direction: 'IN' })} theme={theme}>
-                            <ArrowUp className="h-4 w-4" />
-                            IN
+                          <ActionButton 
+                            onClick={() => handleMoveStock({ id: item._id, direction: 'IN' })} 
+                            theme={theme}
+                            className="!px-2 !py-1.5 !text-xs !rounded-lg"
+                            title="Stock In"
+                          >
+                            <ArrowUp className="h-3.5 w-3.5" />
                           </ActionButton>
 
-                          <ActionButton onClick={() => handleMoveStock({ id: item._id, direction: 'OUT' })} theme={theme}>
-                            <ArrowDown className="h-4 w-4" />
-                            OUT
+                          <ActionButton 
+                            onClick={() => handleMoveStock({ id: item._id, direction: 'OUT' })} 
+                            theme={theme}
+                            className="!px-2 !py-1.5 !text-xs !rounded-lg"
+                            title="Stock Out"
+                          >
+                            <ArrowDown className="h-3.5 w-3.5" />
                           </ActionButton>
 
                           <ActionButton
                             variant="primary"
                             onClick={() => handleMoveStock({ id: item._id, direction: 'SALE' })}
                             theme={theme}
+                            className="!px-2.5 !py-1.5 !text-xs !rounded-lg"
+                            title="Record Sale"
                           >
-                            <ShoppingCart className="h-4 w-4" />
-                            SALE
+                            <ShoppingCart className="h-3.5 w-3.5" />
+                            <span className="ml-1">SALE</span>
                           </ActionButton>
 
                           <ActionButton
@@ -980,9 +989,10 @@ export function Dashboard() {
                               }
                             }}
                             theme={theme}
+                            className="!px-2 !py-1.5 !text-xs !rounded-lg"
+                            title="Archive Item"
                           >
-                            <Archive className="h-4 w-4" />
-                            Archive
+                            <Archive className="h-3.5 w-3.5" />
                           </ActionButton>
                         </>
                       ) : (
@@ -1008,9 +1018,11 @@ export function Dashboard() {
                               }
                             }}
                             theme={theme}
+                            className="!px-2.5 !py-1.5 !text-xs !rounded-lg"
+                            title="Restore Item"
                           >
-                            <Undo2 className="h-4 w-4" />
-                            Restore
+                            <Undo2 className="h-3.5 w-3.5" />
+                            <span className="ml-1">Restore</span>
                           </ActionButton>
 
                           <ActionButton
@@ -1032,9 +1044,10 @@ export function Dashboard() {
                               }
                             }}
                             theme={theme}
+                            className="!px-2 !py-1.5 !text-xs !rounded-lg"
+                            title="Delete Permanently"
                           >
-                            <Trash2 className="h-4 w-4" />
-                            Delete
+                            <Trash2 className="h-3.5 w-3.5" />
                           </ActionButton>
                         </>
                       )}
