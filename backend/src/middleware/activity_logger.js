@@ -19,8 +19,13 @@ async function activityLogger(req, res, next) {
     const mutations = ['POST', 'PUT', 'PATCH', 'DELETE'];
     if (!mutations.includes(req.method)) return;
 
-    // Skip if user is not authenticated
-    if (!req.user) return;
+    // Skip if user is not authenticated (silent unless it's a mutation that expected auth)
+    if (!req.user) {
+      if (res.statusCode < 400) {
+        logger.warn(`Activity Logger: Skipping log for successful mutation ${req.method} ${req.originalUrl} - User not authenticated.`);
+      }
+      return;
+    }
 
     // Optional: Skip login endpoint to avoid unnecessary noise
     if (req.originalUrl.includes('/auth/login')) return;
@@ -44,7 +49,7 @@ async function activityLogger(req, res, next) {
 
     // Save to database
     saveLog(logEntry).catch(err => {
-      logger.error('Failed to save activity log:', err);
+      logger.error(`Failed to save activity log [${req.method} ${req.originalUrl}]: ${err.message || err}`);
     });
   });
 

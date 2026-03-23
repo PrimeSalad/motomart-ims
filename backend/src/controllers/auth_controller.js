@@ -33,12 +33,16 @@ async function login(req, res, next) {
     const supabase = getDb();
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, full_name, role, password_hash')
+      .select('id, email, full_name, role, password_hash, is_active')
       .eq('email', safeLowerEmail(email))
       .single();
 
     if (error || !user) {
       return next(new AppError('Invalid credentials.', 401, 'UNAUTHORIZED'));
+    }
+
+    if (user.is_active === false) {
+      return next(new AppError('Your account has been deactivated.', 403, 'DEACTIVATED'));
     }
 
     const ok = await bcrypt.compare(String(password), user.password_hash);

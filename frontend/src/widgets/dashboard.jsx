@@ -272,6 +272,92 @@ function InventoryRow({ children, isLowStock = false, theme }) {
   );
 }
 
+function getFriendlyLogMessage(log) {
+  const { action, resource, details } = log;
+  let parsedDetails = {};
+  try {
+    parsedDetails = typeof details === 'string' ? JSON.parse(details) : (details || {});
+  } catch (e) {
+    parsedDetails = {};
+  }
+
+  const body = parsedDetails.body || {};
+  const params = parsedDetails.params || {};
+
+  // Inventory Routes
+  if (resource.includes('/api/inventory')) {
+    if (action === 'POST') return `Created new part: ${body.name || body.sku || 'Unknown'}`;
+    if (resource.includes('/archive')) return `Archived part: ${body.sku || params.id || ''}`;
+    if (resource.includes('/restore')) return `Restored part: ${body.sku || params.id || ''}`;
+    if (resource.includes('/stock')) {
+      const dir = body.direction === 'IN' ? 'Added' : body.direction === 'SALE' ? 'Sold' : 'Removed';
+      return `${dir} ${body.quantity || ''} units for part ID: ${params.id || ''}`;
+    }
+    if (resource.includes('/permanent')) return `Permanently deleted part ID: ${params.id || ''}`;
+    if (action === 'PUT' || action === 'PATCH') return `Updated part details: ${body.name || params.id || ''}`;
+  }
+
+  // User Routes
+  if (resource.includes('/api/users')) {
+    if (resource.includes('/status')) return `${body.is_active ? 'Activated' : 'Deactivated'} user account`;
+    if (resource.includes('/profile')) return `Updated personal profile`;
+    if (action === 'POST') return `Created new user: ${body.full_name || body.email || ''}`;
+    if (action === 'DELETE') return `Deleted user account`;
+    if (action === 'PATCH') return `Updated user details`;
+  }
+
+  // Auth Routes
+  if (resource.includes('/api/auth')) {
+    if (resource.includes('/login')) return `Logged into the system`;
+    if (resource.includes('/change-password')) return `Changed account password`;
+    if (resource.includes('/forgot-password')) return `Requested password reset`;
+  }
+
+  // Fallback
+  return `${action} request to ${resource}`;
+}
+
+function getInventoryLogDetails(log) {
+  const { action, quantity, note, inventory_items } = log;
+  const partName = inventory_items?.name || 'Unknown Part';
+  const sku = inventory_items?.sku || 'N/A';
+  
+  let message = '';
+  let colorClass = 'text-stone-400';
+
+  switch (action) {
+    case 'CREATE':
+      message = `Created new part entry`;
+      colorClass = 'text-green-500';
+      break;
+    case 'STOCK_MOVE':
+      const isAdd = (note || '').toLowerCase().includes('in') || (note || '').toLowerCase().includes('add');
+      message = `${isAdd ? 'Added' : 'Removed'} ${quantity} units`;
+      colorClass = isAdd ? 'text-blue-400' : 'text-amber-400';
+      break;
+    case 'SALE':
+      message = `Sold ${quantity} units`;
+      colorClass = 'text-green-400';
+      break;
+    case 'ARCHIVE':
+      message = `Archived part`;
+      colorClass = 'text-amber-500';
+      break;
+    case 'RESTORE':
+      message = `Restored part from archive`;
+      colorClass = 'text-indigo-400';
+      break;
+    case 'DELETE':
+      message = `Permanently deleted part`;
+      colorClass = 'text-red-500';
+      break;
+    default:
+      message = `${action} action performed`;
+  }
+
+  return { message, partName, sku, colorClass };
+}
+
 export function Dashboard() {
   useDashboardFonts();
 
@@ -285,6 +371,7 @@ export function Dashboard() {
   const [quickExportOpen, setQuickExportOpen] = useState(false);
   const [inventoryExportOpen, setInventoryExportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [inventoryLogsOpen, setInventoryLogsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState('team'); // 'team' or 'logs'
   const [selectedLogUserId, setSelectedLogUserId] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -810,6 +897,21 @@ export function Dashboard() {
                         classes.CARD
                       )}
                     >
+                      <button
+                        onClick={() => {
+                          setInventoryLogsOpen(true);
+                          setUserMenuOpen(false);
+                        }}
+                        className={classNames(
+                          'flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-colors',
+                          isDark ? 'hover:bg-stone-800' : 'hover:bg-red-50',
+                          classes.TEXT_PRIMARY
+                        )}
+                      >
+                        <Activity className="h-4 w-4" />
+                        Inventory Logs
+                      </button>
+
                       {canManage && (
                         <button
                           onClick={() => {
@@ -1728,7 +1830,7 @@ export function Dashboard() {
             onClick={() => setSettingsTab('logs')} theme={theme}
             className="!py-2"
           >
-            Audit Logs
+            System Logs
           </ActionButton>
         </div>
 
@@ -1844,35 +1946,62 @@ export function Dashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              <SectionHeading 
-                label="Audit Trail" 
-                title={selectedLogUserId ? "Filtered Activity" : "System Activity"} 
-                theme={theme} 
-                action={selectedLogUserId ? (
-                  <ActionButton 
-                    theme={theme} 
-                    className="!py-1 !px-2 !text-xs" 
-                    onClick={() => setSelectedLogUserId(null)}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <SectionHeading 
+                  label="Audit Trail" 
+                  title={selectedLogUserId ? "Filtered Activity" : "System Activity"} 
+                  theme={theme} 
+                />
+                
+                <div className="flex items-center gap-2">
+                  <select 
+                    className={classNames(classes.INPUT, '!py-1.5 !px-3 !text-xs !w-auto')}
+                    value={selectedLogUserId || ''}
+                    onChange={(e) => setSelectedLogUserId(e.target.value || null)}
                   >
-                    Clear Filter
-                  </ActionButton>
-                ) : null}
-              />
+                    <option value="">All Users</option>
+                    {users.map(u => (
+                      <option key={u.id} value={u.id}>{u.full_name}</option>
+                    ))}
+                  </select>
+                  {selectedLogUserId && (
+                    <ActionButton 
+                      theme={theme} 
+                      className="!py-1.5 !px-2 !text-xs" 
+                      onClick={() => setSelectedLogUserId(null)}
+                    >
+                      Clear
+                    </ActionButton>
+                  )}
+                </div>
+              </div>
+
               {logsLoading ? (
                 <div className="text-sm py-4">Loading logs...</div>
               ) : logs.length > 0 ? (
                 <div className="space-y-2">
                   {logs.map(log => (
-                    <div key={log.id} className={classNames('p-3 rounded-2xl border text-xs', classes.BORDER, classes.BG_SECONDARY)}>
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="font-semibold text-red-400">{log.action}</span>
-                        <span className="text-stone-500">{new Date(log.created_at).toLocaleString()}</span>
+                    <div key={log.id} className={classNames('p-3 rounded-2xl border text-[13px]', classes.BORDER, classes.BG_SECONDARY)}>
+                      <div className="flex justify-between items-start mb-1.5">
+                        <span className={classNames('font-bold', isDark ? 'text-red-400' : 'text-red-700')}>
+                          {getFriendlyLogMessage(log)}
+                        </span>
+                        <span className="text-[11px] text-stone-500 whitespace-nowrap ml-4">
+                          {new Date(log.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                        </span>
                       </div>
-                      <div className="text-stone-300 truncate mb-1">{log.resource}</div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-stone-400">By: {log.user_name}</span>
-                        <span className={classNames('px-1.5 py-0.5 rounded-md', log.status_code >= 400 ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400')}>
-                          {log.status_code}
+                      <div className="flex justify-between items-center text-[12px]">
+                        <div className="flex items-center gap-2">
+                          <span className="text-stone-500">Actor:</span>
+                          <span className={classNames('font-medium', classes.TEXT_PRIMARY)}>{log.user_name}</span>
+                        </div>
+                        <span className={classNames(
+                          'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider', 
+                          log.status_code >= 400 
+                            ? isDark ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700' 
+                            : isDark ? 'bg-green-900/20 text-green-400' : 'bg-green-100 text-green-700'
+                        )}>
+                          {log.status_code >= 400 ? 'Failed' : 'Success'}
                         </span>
                       </div>
                     </div>
@@ -1883,6 +2012,57 @@ export function Dashboard() {
               )}
             </div>
           )}
+        </div>
+      </Modal>
+
+      <Modal open={inventoryLogsOpen} title="Inventory Logs" onClose={() => setInventoryLogsOpen(false)} theme={theme}>
+        <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-3">
+          <SectionHeading label="Audit" title="Part Activity Trail" theme={theme} />
+          
+          <div className="space-y-2">
+            {useSystem().inventoryLogsLoading ? (
+              <div className="text-sm py-4">Loading inventory logs...</div>
+            ) : useSystem().inventoryLogs.length > 0 ? (
+              useSystem().inventoryLogs.map(log => {
+                const details = getInventoryLogDetails(log);
+                return (
+                  <div key={log.id} className={classNames('p-3 rounded-2xl border text-[13px]', classes.BORDER, classes.BG_SECONDARY)}>
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex flex-col">
+                        <span className={classNames('font-bold text-sm', classes.TEXT_PRIMARY)}>
+                          {details.partName}
+                        </span>
+                        <span className="text-[11px] text-stone-500">SKU: {details.sku}</span>
+                      </div>
+                      <span className="text-[11px] text-stone-500 whitespace-nowrap">
+                        {new Date(log.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span className={classNames('font-semibold', details.colorClass)}>
+                          {details.message}
+                        </span>
+                        <span className="text-stone-500 px-1">•</span>
+                        <span className={classNames('text-[12px]', classes.TEXT_TERTIARY)}>
+                          by {log.actor_name || 'System'}
+                        </span>
+                      </div>
+                      
+                      {log.note && (
+                        <span className="text-[11px] italic text-stone-500 max-w-[150px] truncate" title={log.note}>
+                          "{log.note}"
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-sm text-stone-500">No inventory activity recorded.</div>
+            )}
+          </div>
         </div>
       </Modal>
 

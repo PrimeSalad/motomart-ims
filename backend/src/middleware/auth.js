@@ -33,12 +33,16 @@ async function requireAuth(req, _res, next) {
     
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, email, role, full_name')
+      .select('id, email, role, full_name, is_active')
       .eq('id', payload.sub)
       .single();
 
     if (error || !user) {
       return next(new AppError('Invalid token user.', 401, 'UNAUTHORIZED'));
+    }
+
+    if (user.is_active === false) {
+      return next(new AppError('Your account has been deactivated. Please contact an administrator.', 403, 'DEACTIVATED'));
     }
 
     // Determine if the user is a protected System Owner

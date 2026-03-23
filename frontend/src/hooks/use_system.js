@@ -91,6 +91,16 @@ export function useSystem(options = {}) {
     logs: logsQuery.data || [],
     logsLoading: logsQuery.isLoading,
 
+    inventoryLogs: useQuery({
+      queryKey: ['inventory-logs'],
+      queryFn: async () => {
+        const { data } = await api.get('/system/inventory-logs');
+        return data.data || [];
+      },
+      enabled: canManage
+    }).data || [],
+    inventoryLogsLoading: useQuery({ queryKey: ['inventory-logs'] }).isLoading,
+
     createUser,
     toggleUserStatus,
     deleteUser,
