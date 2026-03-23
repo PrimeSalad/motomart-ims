@@ -1894,7 +1894,7 @@ export function Dashboard() {
                           <ActionButton 
                             theme={theme} 
                             className="!px-2 !py-1 !text-xs !rounded-lg"
-                            disabled={u.is_protected}
+                            disabled={u.is_protected || (u.role === 'super_admin' && !user.isSystemOwner)}
                             onClick={async () => {
                               const nextStatus = !u.is_active;
                               if (window.confirm(`${nextStatus ? 'Activate' : 'Deactivate'} ${u.full_name}?`)) {
@@ -1908,7 +1908,7 @@ export function Dashboard() {
                             variant="danger" 
                             theme={theme} 
                             className="!px-2 !py-1 !text-xs !rounded-lg"
-                            disabled={u.is_protected}
+                            disabled={u.is_protected || (u.role === 'super_admin' && !user.isSystemOwner)}
                             onClick={async () => {
                               if (window.confirm(`Permanently delete ${u.full_name}?`)) {
                                 await deleteUser.mutateAsync({ id: u.id });
@@ -1944,8 +1944,8 @@ export function Dashboard() {
                   <div className="grid grid-cols-2 gap-2">
                     <select className={classes.INPUT} name="role" required>
                       <option value="staff">Staff</option>
-                      {user.role === 'super_admin' && <option value="admin">Admin</option>}
-                      {user.role === 'super_admin' && <option value="super_admin">Super Admin</option>}
+                      {(user.role === 'admin' || user.role === 'super_admin') && <option value="admin">Admin</option>}
+                      {user.isSystemOwner && <option value="super_admin">Super Admin</option>}
                     </select>
                     <div className="relative">
                       <input 
