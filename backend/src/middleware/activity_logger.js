@@ -14,19 +14,16 @@ const { logger } = require('../utils/logger');
  * Middleware to log all POST, PUT, PATCH, and DELETE requests.
  */
 async function activityLogger(req, res, next) {
-  // Capture original end method to log after response is sent
-  const originalEnd = res.end;
-
-  res.end = function(chunk, encoding) {
-    res.end = originalEnd;
-    res.end(chunk, encoding);
-
+  res.on('finish', () => {
     // Only log mutations (POST, PUT, PATCH, DELETE)
     const mutations = ['POST', 'PUT', 'PATCH', 'DELETE'];
     if (!mutations.includes(req.method)) return;
 
-    // Skip if user is not authenticated (though most mutations should be)
+    // Skip if user is not authenticated
     if (!req.user) return;
+
+    // Optional: Skip login endpoint to avoid unnecessary noise
+    if (req.originalUrl.includes('/auth/login')) return;
 
     // Define what we want to log
     const logEntry = {
@@ -36,7 +33,7 @@ async function activityLogger(req, res, next) {
       action: req.method,
       resource: req.originalUrl,
       status_code: res.statusCode,
-      ip_address: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+      ip_address: req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown',
       details: JSON.stringify({
         params: req.params,
         query: req.query,
@@ -45,11 +42,11 @@ async function activityLogger(req, res, next) {
       created_at: new Date()
     };
 
-    // Save to database (fire and forget for performance, or handle errors silently)
+    // Save to database
     saveLog(logEntry).catch(err => {
       logger.error('Failed to save activity log:', err);
     });
-  };
+  });
 
   next();
 }
