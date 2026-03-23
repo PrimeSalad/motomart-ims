@@ -16,17 +16,17 @@ router.use(requireAuth);
 router.get('/', c.listItems);
 router.get('/sku/:sku', c.getBySku);
 router.get('/:id', c.getById);
-router.post('/', requireRole(['super_admin', 'admin', 'staff']), c.createItem);
-router.put('/:id', requireRole(['super_admin', 'admin', 'staff']), c.updateItem);
+router.post('/', requireRole('staff'), c.createItem);
+router.put('/:id', requireRole('staff'), c.updateItem);
 
 // Archive / Restore
-router.patch('/:id/archive', requireRole(['super_admin', 'admin', 'staff']), c.archiveItem);
-router.patch('/:id/restore', requireRole(['super_admin', 'admin', 'staff']), c.restoreItem);
+router.patch('/:id/archive', requireRole('staff'), c.archiveItem);
+router.patch('/:id/restore', requireRole('staff'), c.restoreItem);
 
 // Hard Delete
-router.delete('/:id/permanent', requireRole(['super_admin', 'admin']), c.deleteItemPermanently);
+router.delete('/:id/permanent', requireRole('admin'), c.deleteItemPermanently);
 
 // Move Stock
-router.patch('/:id/stock', requireRole(['super_admin', 'admin', 'staff']), c.moveStock);
+router.patch('/:id/stock', requireRole('staff'), c.moveStock);
 
 module.exports = router;

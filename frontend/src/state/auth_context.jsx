@@ -59,12 +59,15 @@ export function AuthProvider({ children }) {
         const payload = JSON.stringify(next);
         if (remember) {
           localStorage.setItem(STORAGE_KEY, payload);
+          sessionStorage.removeItem(STORAGE_KEY);
         } else {
           sessionStorage.setItem(STORAGE_KEY, payload);
+          localStorage.removeItem(STORAGE_KEY);
         }
+      } else {
+        clearAll();
       }
     },
-
     logout: () => {
       setToken(null);
       setUser(null);

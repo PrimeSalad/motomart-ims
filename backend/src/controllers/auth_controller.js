@@ -14,6 +14,7 @@ const { getDb } = require('../config/db');
 const { signToken } = require('../services/jwt_service');
 const { sendMail } = require('../services/mailer_service');
 const { env } = require('../config/env');
+const { ROLE_WEIGHTS } = require('../middleware/auth');
 
 const BCRYPT_ROUNDS = 10;
 
@@ -46,6 +47,8 @@ async function login(req, res, next) {
     }
 
     const token = signToken(user.id);
+    const userEmail = String(user.email || '').toLowerCase().trim();
+    const isSystemOwner = env.SYSTEM_OWNER_EMAILS.includes(userEmail);
 
     return res.status(200).json({
       ok: true,
@@ -56,6 +59,8 @@ async function login(req, res, next) {
           email: user.email,
           name: user.full_name,
           role: user.role,
+          isSystemOwner,
+          roleWeight: ROLE_WEIGHTS[user.role] || 0
         },
       },
     });

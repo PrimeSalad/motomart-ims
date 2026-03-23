@@ -41,6 +41,10 @@ const env = {
     process.env.GEMINI_API_KEY || '',
 
   GEMINI_MODEL: process.env.GEMINI_MODEL || '',
+
+  // RBAC Security
+  SYSTEM_OWNER_EMAILS: (process.env.SYSTEM_OWNER_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean),
+
   // 🔴 IMPORTANT FIX
   // bcrypt salt rounds
   BCRYPT_SALT_ROUNDS:

@@ -1,8 +1,8 @@
 /*
  * Carbon & Crimson IMS
  * File: src/middleware/auth.js
- * Version: 2.0.0
- * Purpose: JWT auth + RBAC using Supabase.
+ * Version: 2.1.0
+ * Purpose: JWT auth + Hierarchical RBAC + System Owner identification.
  */
 
 'use strict';
@@ -11,6 +11,13 @@ const jwt = require('jsonwebtoken');
 const { env } = require('../config/env');
 const { AppError } = require('../utils/app_error');
 const { getDb } = require('../config/db');
+
+// Role Weighting
+const ROLE_WEIGHTS = {
+  staff: 10,
+  admin: 20,
+  super_admin: 30
+};
 
 async function requireAuth(req, _res, next) {
   const authHeader = req.headers.authorization || '';
@@ -34,11 +41,17 @@ async function requireAuth(req, _res, next) {
       return next(new AppError('Invalid token user.', 401, 'UNAUTHORIZED'));
     }
 
+    // Determine if the user is a protected System Owner
+    const email = String(user.email || '').toLowerCase().trim();
+    const isSystemOwner = env.SYSTEM_OWNER_EMAILS.includes(email);
+
     req.user = {
       id: user.id,
       email: user.email,
       role: user.role,
       name: user.full_name,
+      isSystemOwner,
+      roleWeight: ROLE_WEIGHTS[user.role] || 0
     };
 
     return next();
@@ -47,14 +60,22 @@ async function requireAuth(req, _res, next) {
   }
 }
 
-function requireRole(allowedRoles) {
+/**
+ * Enforce a minimum role weight for an endpoint.
+ * @param {string} minRole 'staff', 'admin', or 'super_admin'
+ */
+function requireRole(minRole) {
+  const minWeight = ROLE_WEIGHTS[minRole] || 0;
+  
   return (req, _res, next) => {
-    const role = req.user?.role;
-    if (!role || !allowedRoles.includes(role)) {
+    const userWeight = req.user?.roleWeight || 0;
+    
+    if (userWeight < minWeight) {
       return next(new AppError('Insufficient role permissions.', 403, 'FORBIDDEN'));
     }
+    
     return next();
   };
 }
 
-module.exports = { requireAuth, requireRole };
+module.exports = { requireAuth, requireRole, ROLE_WEIGHTS };

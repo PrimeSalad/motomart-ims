@@ -8,11 +8,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Archive,
+  Activity,
   AlertTriangle,
   ArrowDown,
   ArrowUp,
   BarChart3,
   ChevronDown,
+  Eye,
+  EyeOff,
   FileDown,
   FileSpreadsheet,
   FileText,
@@ -26,6 +29,7 @@ import {
   Sun,
   Trash2,
   Undo2,
+  User,
   Wrench
 } from 'lucide-react';
 import {
@@ -43,6 +47,7 @@ import QRCode from 'qrcode';
 
 import { useAuth } from '../state/auth_context';
 import { useInventory } from '../hooks/use_inventory';
+import { useSystem } from '../hooks/use_system';
 import { formatPhp } from '../lib/format';
 import { exportDashboardPdf } from '../lib/pdf_export';
 
@@ -276,7 +281,13 @@ export function Dashboard() {
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('active');
   const [createOpen, setCreateOpen] = useState(false);
-  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [quickExportOpen, setQuickExportOpen] = useState(false);
+  const [inventoryExportOpen, setInventoryExportOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState('team'); // 'team' or 'logs'
+  const [selectedLogUserId, setSelectedLogUserId] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
 
   const [compatMake, setCompatMake] = useState('');
   const [compatModel, setCompatModel] = useState('');
@@ -296,6 +307,18 @@ export function Dashboard() {
     deletePermanently,
     compatSearch
   } = useInventory({ search, category, status });
+
+  const {
+    users,
+    usersLoading,
+    logs,
+    logsLoading,
+    createUser,
+    toggleUserStatus,
+    deleteUser,
+    updateProfile,
+    canManage
+  } = useSystem({ logUserId: selectedLogUserId });
 
   const inventoryList = Array.isArray(inventory) ? inventory : [];
 
@@ -754,8 +777,20 @@ export function Dashboard() {
                 Mock Scan
               </ActionButton>
 
+              {canManage && (
+                <ActionButton onClick={() => setSettingsOpen(true)} theme={theme}>
+                  <Shield className="h-4 w-4" />
+                  System
+                </ActionButton>
+              )}
+
               <ActionButton onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} theme={theme}>
                 {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </ActionButton>
+
+              <ActionButton onClick={() => setProfileOpen(true)} theme={theme}>
+                <User className="h-4 w-4" />
+                Profile
               </ActionButton>
 
               <ActionButton onClick={logout} theme={theme}>
@@ -946,16 +981,16 @@ export function Dashboard() {
                 <ActionButton 
                   variant="primary" 
                   className="w-full" 
-                  onClick={() => setExportMenuOpen(!exportMenuOpen)} 
+                  onClick={() => setQuickExportOpen(!quickExportOpen)} 
                   theme={theme}
                 >
                   <FileDown className="h-4 w-4" />
                   Export
-                  <ChevronDown className={classNames('h-3.5 w-3.5 ml-auto transition-transform', exportMenuOpen && 'rotate-180')} />
+                  <ChevronDown className={classNames('h-3.5 w-3.5 ml-auto transition-transform', quickExportOpen && 'rotate-180')} />
                 </ActionButton>
                 
                 <AnimatePresence>
-                  {exportMenuOpen && (
+                  {quickExportOpen && (
                     <motion.div
                       initial={{ opacity: 0, y: -10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -971,7 +1006,7 @@ export function Dashboard() {
                       <button
                         onClick={() => {
                           handleExportPdf();
-                          setExportMenuOpen(false);
+                          setQuickExportOpen(false);
                         }}
                         className={classNames(
                           'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
@@ -987,7 +1022,7 @@ export function Dashboard() {
                       <button
                         onClick={() => {
                           handleExportExcel();
-                          setExportMenuOpen(false);
+                          setQuickExportOpen(false);
                         }}
                         className={classNames(
                           'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
@@ -1003,7 +1038,7 @@ export function Dashboard() {
                       <button
                         onClick={() => {
                           handleExportWord();
-                          setExportMenuOpen(false);
+                          setQuickExportOpen(false);
                         }}
                         className={classNames(
                           'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
@@ -1210,16 +1245,16 @@ export function Dashboard() {
                   <ActionButton 
                     variant="primary" 
                     className="w-full" 
-                    onClick={() => setExportMenuOpen(!exportMenuOpen)} 
+                    onClick={() => setInventoryExportOpen(!inventoryExportOpen)} 
                     theme={theme}
                   >
                     <FileDown className="h-4 w-4" />
                     Export
-                    <ChevronDown className={classNames('h-3.5 w-3.5 transition-transform', exportMenuOpen && 'rotate-180')} />
+                    <ChevronDown className={classNames('h-3.5 w-3.5 transition-transform', inventoryExportOpen && 'rotate-180')} />
                   </ActionButton>
                   
                   <AnimatePresence>
-                    {exportMenuOpen && (
+                    {inventoryExportOpen && (
                       <motion.div
                         initial={{ opacity: 0, y: -10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -1235,7 +1270,7 @@ export function Dashboard() {
                         <button
                           onClick={() => {
                             handleExportPdf();
-                            setExportMenuOpen(false);
+                            setInventoryExportOpen(false);
                           }}
                           className={classNames(
                             'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
@@ -1250,8 +1285,8 @@ export function Dashboard() {
                         
                         <button
                           onClick={() => {
-                            window.alert('Excel export coming soon!');
-                            setExportMenuOpen(false);
+                            handleExportExcel();
+                            setInventoryExportOpen(false);
                           }}
                           className={classNames(
                             'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
@@ -1266,8 +1301,8 @@ export function Dashboard() {
                         
                         <button
                           onClick={() => {
-                            window.alert('Word export coming soon!');
-                            setExportMenuOpen(false);
+                            handleExportWord();
+                            setInventoryExportOpen(false);
                           }}
                           className={classNames(
                             'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
@@ -1444,30 +1479,32 @@ export function Dashboard() {
                             <span className="ml-1">Restore</span>
                           </ActionButton>
 
-                          <ActionButton
-                            variant="danger"
-                            onClick={async () => {
-                              const isConfirmed = window.confirm(
-                                `Permanently delete ${item.sku}? This cannot be undone.`
-                              );
+                          {canManage && (
+                            <ActionButton
+                              variant="danger"
+                              onClick={async () => {
+                                const isConfirmed = window.confirm(
+                                  `Permanently delete ${item.sku}? This cannot be undone.`
+                                );
 
-                              if (!isConfirmed) {
-                                return;
-                              }
+                                if (!isConfirmed) {
+                                  return;
+                                }
 
-                              try {
-                                await deletePermanently.mutateAsync({ id: item._id });
-                              } catch (error) {
-                                console.error(error);
-                                window.alert('Delete failed (admin only).');
-                              }
-                            }}
-                            theme={theme}
-                            className="!px-2 !py-1.5 !text-xs !rounded-lg"
-                            title="Delete Permanently"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </ActionButton>
+                                try {
+                                  await deletePermanently.mutateAsync({ id: item._id });
+                                } catch (error) {
+                                  console.error(error);
+                                  window.alert('Delete failed (admin only).');
+                                }
+                              }}
+                              theme={theme}
+                              className="!px-2 !py-1.5 !text-xs !rounded-lg"
+                              title="Delete Permanently"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </ActionButton>
+                          )}
                         </>
                       )}
                     </div>
@@ -1601,6 +1638,219 @@ export function Dashboard() {
               {createItem.error?.response?.data?.error?.message || 'Failed to create item.'}
             </div>
           ) : null}
+        </form>
+      </Modal>
+
+      <Modal open={settingsOpen} title="System Settings" onClose={() => setSettingsOpen(false)} theme={theme}>
+        <div className="flex gap-2 border-b pb-4 mb-4 border-red-900/30">
+          <ActionButton 
+            variant={settingsTab === 'team' ? 'primary' : 'secondary'} 
+            onClick={() => {
+              setSettingsTab('team');
+              setSelectedLogUserId(null);
+            }} 
+            theme={theme}
+            className="!py-2"
+          >
+            Team
+          </ActionButton>
+          <ActionButton 
+            variant={settingsTab === 'logs' ? 'primary' : 'secondary'} 
+            onClick={() => setSettingsTab('logs')} theme={theme}
+            className="!py-2"
+          >
+            Audit Logs
+          </ActionButton>
+        </div>
+
+        <div className="max-h-[60vh] overflow-y-auto pr-2">
+          {settingsTab === 'team' ? (
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <SectionHeading label="Workforce" title="Active Members" theme={theme} />
+                {usersLoading ? (
+                  <div className="text-sm py-4">Loading team...</div>
+                ) : users.length > 0 ? (
+                  <div className="space-y-2">
+                    {users.map(u => (
+                      <div key={u.id} className={classNames('flex items-center justify-between p-3 rounded-2xl border', classes.BORDER, classes.BG_SECONDARY)}>
+                        <div>
+                          <div className="text-sm font-semibold flex items-center gap-2">
+                            {u.full_name}
+                            {u.is_protected && <Shield className="h-3 w-3 text-red-500" title="System Owner" />}
+                          </div>
+                          <div className="text-xs text-stone-500">{u.email} • <span className="uppercase">{u.role}</span></div>
+                        </div>
+                        <div className="flex gap-1">
+                          <ActionButton 
+                            theme={theme} 
+                            className="!px-2 !py-1 !text-xs !rounded-lg"
+                            title="View User Logs"
+                            onClick={() => {
+                              setSelectedLogUserId(u.id);
+                              setSettingsTab('logs');
+                            }}
+                          >
+                            <Activity className="h-3.5 w-3.5" />
+                          </ActionButton>
+                          <ActionButton 
+                            theme={theme} 
+                            className="!px-2 !py-1 !text-xs !rounded-lg"
+                            disabled={u.is_protected}
+                            onClick={async () => {
+                              const nextStatus = !u.is_active;
+                              if (window.confirm(`${nextStatus ? 'Activate' : 'Deactivate'} ${u.full_name}?`)) {
+                                await toggleUserStatus.mutateAsync({ id: u.id, is_active: nextStatus });
+                              }
+                            }}
+                          >
+                            {u.is_active ? 'Deactivate' : 'Activate'}
+                          </ActionButton>
+                          <ActionButton 
+                            variant="danger" 
+                            theme={theme} 
+                            className="!px-2 !py-1 !text-xs !rounded-lg"
+                            disabled={u.is_protected}
+                            onClick={async () => {
+                              if (window.confirm(`Permanently delete ${u.full_name}?`)) {
+                                await deleteUser.mutateAsync({ id: u.id });
+                              }
+                            }}
+                          >
+                            Delete
+                          </ActionButton>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-stone-500">No members found.</div>
+                )}
+              </div>
+
+              <div className={classNames('p-4 rounded-3xl border border-dashed', classes.BORDER)}>
+                <SectionHeading label="Onboarding" title="Add New Member" theme={theme} />
+                <form className="mt-4 space-y-3" onSubmit={async (e) => {
+                  e.preventDefault();
+                  const fd = new FormData(e.currentTarget);
+                  await createUser.mutateAsync({
+                    email: fd.get('email'),
+                    full_name: fd.get('full_name'),
+                    role: fd.get('role'),
+                    password: fd.get('password')
+                  });
+                  e.currentTarget.reset();
+                }}>
+                  <input className={classes.INPUT} name="full_name" placeholder="Full Name" required />
+                  <input className={classes.INPUT} name="email" type="email" placeholder="Email Address" required />
+                  <div className="grid grid-cols-2 gap-2">
+                    <select className={classes.INPUT} name="role" required>
+                      <option value="staff">Staff</option>
+                      {user.role === 'super_admin' && <option value="admin">Admin</option>}
+                      {user.role === 'super_admin' && <option value="super_admin">Super Admin</option>}
+                    </select>
+                    <div className="relative">
+                      <input 
+                        className={classes.INPUT} 
+                        name="password" 
+                        type={showCreatePassword ? "text" : "password"} 
+                        placeholder="Temp Password" 
+                        required 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowCreatePassword(!showCreatePassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-300"
+                      >
+                        {showCreatePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <ActionButton variant="primary" type="submit" className="w-full" disabled={createUser.isPending}>
+                    {createUser.isPending ? 'Creating...' : 'Create Account'}
+                  </ActionButton>
+                  {createUser.isError && <div className="text-xs text-red-500">{createUser.error?.response?.data?.error?.message || 'Failed to create user'}</div>}
+                </form>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <SectionHeading 
+                label="Audit Trail" 
+                title={selectedLogUserId ? "Filtered Activity" : "System Activity"} 
+                theme={theme} 
+                action={selectedLogUserId ? (
+                  <ActionButton 
+                    theme={theme} 
+                    className="!py-1 !px-2 !text-xs" 
+                    onClick={() => setSelectedLogUserId(null)}
+                  >
+                    Clear Filter
+                  </ActionButton>
+                ) : null}
+              />
+              {logsLoading ? (
+                <div className="text-sm py-4">Loading logs...</div>
+              ) : logs.length > 0 ? (
+                <div className="space-y-2">
+                  {logs.map(log => (
+                    <div key={log.id} className={classNames('p-3 rounded-2xl border text-xs', classes.BORDER, classes.BG_SECONDARY)}>
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="font-semibold text-red-400">{log.action}</span>
+                        <span className="text-stone-500">{new Date(log.created_at).toLocaleString()}</span>
+                      </div>
+                      <div className="text-stone-300 truncate mb-1">{log.resource}</div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-stone-400">By: {log.user_name}</span>
+                        <span className={classNames('px-1.5 py-0.5 rounded-md', log.status_code >= 400 ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400')}>
+                          {log.status_code}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-stone-500">No activity logs found.</div>
+              )}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      <Modal open={profileOpen} title="My Profile" onClose={() => setProfileOpen(false)} theme={theme}>
+        <form className="space-y-4" onSubmit={async (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.currentTarget);
+          try {
+            await updateProfile.mutateAsync({
+              full_name: fd.get('full_name'),
+              email: fd.get('email'),
+              password: fd.get('password') || undefined
+            });
+            window.alert('Profile updated successfully! If you changed your email or password, you may need to log in again.');
+            setProfileOpen(false);
+          } catch (err) {
+            window.alert(err?.response?.data?.error?.message || 'Failed to update profile.');
+          }
+        }}>
+          <label className="block">
+            <span className={classNames('text-sm font-medium', classes.TEXT_TERTIARY)}>Full Name</span>
+            <input className={classNames(classes.INPUT, 'mt-2')} name="full_name" defaultValue={user?.name || user?.full_name} required />
+          </label>
+          <label className="block">
+            <span className={classNames('text-sm font-medium', classes.TEXT_TERTIARY)}>Email Address</span>
+            <input className={classNames(classes.INPUT, 'mt-2')} name="email" type="email" defaultValue={user?.email} required />
+          </label>
+          <label className="block">
+            <span className={classNames('text-sm font-medium', classes.TEXT_TERTIARY)}>New Password (Optional)</span>
+            <input className={classNames(classes.INPUT, 'mt-2')} name="password" type="password" placeholder="Leave blank to keep current" minLength={6} />
+          </label>
+          
+          <div className="flex gap-2 pt-2">
+            <ActionButton variant="primary" type="submit" className="w-full" disabled={updateProfile.isPending} theme={theme}>
+              {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+            </ActionButton>
+          </div>
         </form>
       </Modal>
     </div>

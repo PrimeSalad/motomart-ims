@@ -11,6 +11,10 @@ const express = require('express');
 
 const { env } = require('./config/env');
 const { logger } = require('./utils/logger');
+const { activityLogger } = require('./middleware/activity_logger');
+const { requireAuth } = require('./middleware/auth');
+
+const { globalErrorHandler } = require('./middleware/global_error_handler');
 
 /*
  SAFE ROUTER IMPORTS
@@ -24,6 +28,8 @@ const authRoutes = require('./routes/auth_routes');
 const inventoryRoutes = require('./routes/inventory_routes');
 const analyticsRoutes = require('./routes/analytics_routes');
 const compatRoutes = require('./routes/compat_routes');
+const userRoutes = require('./routes/user_routes');
+const activityRoutes = require('./routes/activity_routes');
 
 const authRouter =
   authRoutes.authRouter || authRoutes;
@@ -37,11 +43,17 @@ const analyticsRouter =
 const compatRouter =
   compatRoutes.compatRouter || compatRoutes;
 
+const userRouter = userRoutes;
+const activityRouter = activityRoutes;
+
 
 const app = express();
 
 /* JSON */
 app.use(express.json());
+
+/* Activity Logging (Global) */
+app.use(activityLogger);
 
 /* HARD CORS FIX */
 const allowedOrigins = String(env.CORS_ORIGIN || 'http://localhost:5173')
@@ -108,17 +120,12 @@ app.use('/api/analytics', analyticsRouter);
 
 app.use('/api/compat', compatRouter);
 
+app.use('/api/users', userRouter);
+
+app.use('/api/system', activityRouter);
+
 
 /* ERROR */
-app.use((err,req,res,next)=>{
-
-  logger.error(err);
-
-  res.status(500).json({
-    ok:false,
-    error:'server error'
-  });
-
-});
+app.use(globalErrorHandler);
 
 module.exports = app;

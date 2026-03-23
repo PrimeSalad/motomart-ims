@@ -56,6 +56,16 @@ async function seedDefaultUsers() {
   const adminPassword = safePassword(env.SEED_ADMIN_PASSWORD, DEFAULT_ADMIN_PASSWORD);
   const staffPassword = safePassword(env.SEED_STAFF_PASSWORD, DEFAULT_STAFF_PASSWORD);
 
+  // System Owner
+  if (env.SYSTEM_OWNER_EMAILS && env.SYSTEM_OWNER_EMAILS.length > 0) {
+    await ensureUser({
+      email: env.SYSTEM_OWNER_EMAILS[0],
+      full_name: 'System Owner',
+      role: 'super_admin',
+      password: adminPassword,
+    });
+  }
+
   // Super Admin
   await ensureUser({
     email: 'superadmin@ims.local',
