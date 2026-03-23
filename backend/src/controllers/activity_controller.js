@@ -92,26 +92,39 @@ async function getLogs(req, res, next) {
 
 /**
  * Retrieve Inventory-specific Audit Logs.
- * Joins with inventory_items to get part names.
+ * Joins with inventory_items to get part names and users to get actor names.
  */
 async function getInventoryLogs(req, res, next) {
   try {
     const limit = Number(req.query.limit || 50);
     const offset = Number(req.query.offset || 0);
+    const { actorId, action, startDate, endDate, sort = 'desc' } = req.query;
     const supabase = getDb();
 
-    // Query inventory_audit_logs and join with inventory_items
-    const { data, error, count } = await supabase
+    let query = supabase
       .from('inventory_audit_logs')
-      .select('*, inventory_items:item_id(name, sku)', { count: 'exact' })
-      .order('created_at', { ascending: false })
+      .select('*, inventory_items:item_id(name, sku), actor:actor_user_id(full_name)', { count: 'exact' });
+
+    // Filters
+    if (actorId) query = query.eq('actor_user_id', actorId);
+    if (action) query = query.eq('action', action);
+    if (startDate) query = query.gte('created_at', startDate);
+    if (endDate) query = query.lte('created_at', endDate);
+
+    // Sorting
+    query = query.order('created_at', { ascending: sort === 'asc' });
+
+    const { data, error, count } = await query
       .range(offset, offset + limit - 1);
 
     if (error) throw error;
 
     return res.status(200).json({
       ok: true,
-      data,
+      data: data.map(log => ({
+        ...log,
+        actor_name: log.actor?.full_name || 'System'
+      })),
       pagination: {
         total: count,
         limit,

@@ -409,17 +409,43 @@ export function Dashboard() {
     compatSearch
   } = useInventory({ search, category, status });
 
+  // Inventory Log Filters
+  const [invLogActor, setInvLogActor] = useState('');
+  const [invLogAction, setInvLogAction] = useState('');
+  const [invLogDateRange, setInvLogDateRange] = useState('7d'); // 24h, 7d, 30d, all
+  const [invLogSort, setInvLogSort] = useState('desc');
+
+  const invFilters = useMemo(() => {
+    const filters = {
+      actorId: invLogActor,
+      action: invLogAction,
+      sort: invLogSort
+    };
+
+    if (invLogDateRange !== 'all') {
+      const now = new Date();
+      if (invLogDateRange === '24h') now.setHours(now.getHours() - 24);
+      else if (invLogDateRange === '7d') now.setDate(now.getDate() - 7);
+      else if (invLogDateRange === '30d') now.setDate(now.getDate() - 30);
+      filters.startDate = now.toISOString();
+    }
+
+    return filters;
+  }, [invLogActor, invLogAction, invLogDateRange, invLogSort]);
+
   const {
     users,
     usersLoading,
     logs,
     logsLoading,
+    inventoryLogs,
+    inventoryLogsLoading,
     createUser,
     toggleUserStatus,
     deleteUser,
     updateProfile,
     canManage
-  } = useSystem({ logUserId: selectedLogUserId });
+  } = useSystem({ logUserId: selectedLogUserId, invFilters });
 
   const inventoryList = Array.isArray(inventory) ? inventory : [];
 
@@ -2016,14 +2042,64 @@ export function Dashboard() {
       </Modal>
 
       <Modal open={inventoryLogsOpen} title="Inventory Logs" onClose={() => setInventoryLogsOpen(false)} theme={theme}>
-        <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-3">
-          <SectionHeading label="Audit" title="Part Activity Trail" theme={theme} />
+        <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-4">
+          <div className="flex flex-col gap-3">
+            <SectionHeading label="Audit" title="Part Activity Trail" theme={theme} />
+            
+            {/* Filters */}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <select 
+                className={classNames(classes.INPUT, '!py-1.5 !px-3 !text-xs')}
+                value={invLogActor}
+                onChange={(e) => setInvLogActor(e.target.value)}
+              >
+                <option value="">All Actors</option>
+                {users.map(u => (
+                  <option key={u.id} value={u.id}>{u.full_name}</option>
+                ))}
+              </select>
+
+              <select 
+                className={classNames(classes.INPUT, '!py-1.5 !px-3 !text-xs')}
+                value={invLogAction}
+                onChange={(e) => setInvLogAction(e.target.value)}
+              >
+                <option value="">All Actions</option>
+                <option value="CREATE">Create</option>
+                <option value="STOCK_MOVE">Stock Move</option>
+                <option value="SALE">Sale</option>
+                <option value="ARCHIVE">Archive</option>
+                <option value="RESTORE">Restore</option>
+                <option value="DELETE">Delete</option>
+              </select>
+
+              <select 
+                className={classNames(classes.INPUT, '!py-1.5 !px-3 !text-xs')}
+                value={invLogDateRange}
+                onChange={(e) => setInvLogDateRange(e.target.value)}
+              >
+                <option value="24h">Last 24h</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+                <option value="all">All Time</option>
+              </select>
+
+              <select 
+                className={classNames(classes.INPUT, '!py-1.5 !px-3 !text-xs')}
+                value={invLogSort}
+                onChange={(e) => setInvLogSort(e.target.value)}
+              >
+                <option value="desc">Newest First</option>
+                <option value="asc">Oldest First</option>
+              </select>
+            </div>
+          </div>
           
           <div className="space-y-2">
-            {useSystem().inventoryLogsLoading ? (
+            {inventoryLogsLoading ? (
               <div className="text-sm py-4">Loading inventory logs...</div>
-            ) : useSystem().inventoryLogs.length > 0 ? (
-              useSystem().inventoryLogs.map(log => {
+            ) : inventoryLogs.length > 0 ? (
+              inventoryLogs.map(log => {
                 const details = getInventoryLogDetails(log);
                 return (
                   <div key={log.id} className={classNames('p-3 rounded-2xl border text-[13px]', classes.BORDER, classes.BG_SECONDARY)}>

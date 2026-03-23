@@ -12,9 +12,10 @@ import { useAuth } from '../state/auth_context';
 
 const QK_USERS = ['system', 'users'];
 const QK_LOGS = ['system', 'logs'];
+const QK_INV_LOGS = ['system', 'inventory-logs'];
 
 export function useSystem(options = {}) {
-  const { logUserId } = options;
+  const { logUserId, invFilters = {} } = options;
   const { token, user: currentUser } = useAuth();
   const api = useMemo(() => createApiClient({ token }), [token]);
   const qc = useQueryClient();
@@ -38,6 +39,16 @@ export function useSystem(options = {}) {
     queryFn: async () => {
       const url = logUserId ? `/system/logs?user_id=${logUserId}` : '/system/logs';
       const res = await api.get(url);
+      return res.data.data;
+    },
+    enabled: !!token && canManage
+  });
+
+  // Fetch Inventory Logs
+  const inventoryLogsQuery = useQuery({
+    queryKey: [...QK_INV_LOGS, invFilters],
+    queryFn: async () => {
+      const res = await api.get('/system/inventory-logs', { params: invFilters });
       return res.data.data;
     },
     enabled: !!token && canManage
@@ -91,15 +102,8 @@ export function useSystem(options = {}) {
     logs: logsQuery.data || [],
     logsLoading: logsQuery.isLoading,
 
-    inventoryLogs: useQuery({
-      queryKey: ['inventory-logs'],
-      queryFn: async () => {
-        const { data } = await api.get('/system/inventory-logs');
-        return data.data || [];
-      },
-      enabled: canManage
-    }).data || [],
-    inventoryLogsLoading: useQuery({ queryKey: ['inventory-logs'] }).isLoading,
+    inventoryLogs: inventoryLogsQuery.data || [],
+    inventoryLogsLoading: inventoryLogsQuery.isLoading,
 
     createUser,
     toggleUserStatus,
