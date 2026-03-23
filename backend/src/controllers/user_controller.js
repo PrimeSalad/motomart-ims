@@ -24,7 +24,7 @@ function isProtected(email) {
 
 /**
  * List users based on hierarchy.
- * Admins see Staff. Super Admins see all.
+ * The Primary Administrator sees all. Others see only Admin and Staff.
  */
 async function listUsers(req, res, next) {
   try {
@@ -41,8 +41,12 @@ async function listUsers(req, res, next) {
 
     let query = supabase.from('users').select(selectFields);
 
-    // Visibility Filter: Hide Super Admins from EVERYONE (including other Super Admins)
-    query = query.neq('role', 'super_admin');
+    // Visibility Filter:
+    // Only the System Owner can see Super Admin accounts.
+    // Everyone else (Staff, Admin, and other Super Admins) only see Staff and Admin roles.
+    if (!req.user.isSystemOwner) {
+      query = query.neq('role', 'super_admin');
+    }
 
     const { data: users, error } = await query.order('full_name', { ascending: true });
     
@@ -71,10 +75,15 @@ async function createUser(req, res, next) {
       return next(new AppError('Missing required fields.', 400, 'VALIDATION_ERROR'));
     }
 
-    // Hierarchy Check: Cannot create a role higher than or equal to your own
-    // (Exception: Super Admin can create other Super Admins if needed, but here we'll restrict it to only creating roles <= current role)
+    // Hierarchy Check: 
+    // 1. Cannot create a role strictly higher than your own.
     if (ROLE_WEIGHTS[role] > req.user.roleWeight) {
       return next(new AppError('Cannot create a user with a higher role than your own.', 403, 'FORBIDDEN'));
+    }
+
+    // 2. Only the System Owner can create Super Admins.
+    if (role === 'super_admin' && !req.user.isSystemOwner) {
+      return next(new AppError('Security Violation: Only the Primary Administrator can create Super Admin accounts.', 403, 'FORBIDDEN'));
     }
 
     const supabase = getDb();
@@ -117,12 +126,18 @@ async function toggleStatus(req, res, next) {
 
     // Safety Lock: Cannot deactivate a System Owner
     if (isProtected(target.email)) {
-      return next(new AppError('Security Violation: Cannot modify a System Owner account.', 403, 'FORBIDDEN'));
+      return next(new AppError('Security Violation: Cannot modify a protected administrator account.', 403, 'FORBIDDEN'));
     }
 
-    // Hierarchy Check: Cannot modify someone with a strictly higher role
+    // Hierarchy Check: 
+    // 1. Cannot modify someone with a strictly higher role.
     if (ROLE_WEIGHTS[target.role] > req.user.roleWeight) {
        return next(new AppError('Insufficient permissions to modify this user.', 403, 'FORBIDDEN'));
+    }
+
+    // 2. Only the System Owner can modify other Super Admins.
+    if (target.role === 'super_admin' && !req.user.isSystemOwner) {
+      return next(new AppError('Security Violation: Only the Primary Administrator can manage other Super Admins.', 403, 'FORBIDDEN'));
     }
 
     const { error: updateErr } = await supabase.from('users').update({ is_active }).eq('id', id);
@@ -145,14 +160,20 @@ async function deleteUser(req, res, next) {
     const { data: target, error: fetchErr } = await supabase.from('users').select('email, role').eq('id', id).single();
     if (fetchErr || !target) return next(new AppError('User not found.', 404, 'NOT_FOUND'));
 
-    // Safety Lock
+    // Safety Lock: Cannot delete a System Owner
     if (isProtected(target.email)) {
-      return next(new AppError('Security Violation: Cannot delete a System Owner account.', 403, 'FORBIDDEN'));
+      return next(new AppError('Security Violation: Cannot delete a protected administrator account.', 403, 'FORBIDDEN'));
     }
 
-    // Hierarchy Check
+    // Hierarchy Check:
+    // 1. Cannot delete someone with a strictly higher role.
     if (ROLE_WEIGHTS[target.role] > req.user.roleWeight) {
        return next(new AppError('Insufficient permissions to delete this user.', 403, 'FORBIDDEN'));
+    }
+
+    // 2. Only the System Owner can delete other Super Admins.
+    if (target.role === 'super_admin' && !req.user.isSystemOwner) {
+      return next(new AppError('Security Violation: Only the Primary Administrator can delete other Super Admins.', 403, 'FORBIDDEN'));
     }
 
     const { error: deleteErr } = await supabase.from('users').delete().eq('id', id);
