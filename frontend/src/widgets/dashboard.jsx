@@ -12,7 +12,10 @@ import {
   ArrowDown,
   ArrowUp,
   BarChart3,
+  ChevronDown,
   FileDown,
+  FileSpreadsheet,
+  FileText,
   LogOut,
   Moon,
   Plus,
@@ -273,6 +276,7 @@ export function Dashboard() {
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('active');
   const [createOpen, setCreateOpen] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
   const [compatMake, setCompatMake] = useState('');
   const [compatModel, setCompatModel] = useState('');
@@ -422,6 +426,274 @@ export function Dashboard() {
     } catch (error) {
       console.error(error);
       window.alert('PDF export failed. Please try again.');
+    }
+  }
+
+  function handleExportExcel() {
+    try {
+      // Create professional CSV with better formatting
+      const timestamp = new Date().toLocaleString();
+      const headers = [
+        '=== MOTOMART INVENTORY REPORT ===',
+        `Generated: ${timestamp}`,
+        `User: ${user?.email || 'N/A'}`,
+        `Total Parts: ${totalItemsCount} | Total Stock: ${totalOnHandCount} | Low Stock: ${lowStockCount}`,
+        '',
+        'SKU,Name,Category,Bin Location,Quantity,Threshold,Price (PHP),Cost (PHP),Status,Stock Level'
+      ];
+
+      const rows = inventoryList.map(item => {
+        const qty = Number(item.quantity_on_hand || 0);
+        const threshold = Number(item.low_stock_threshold || 0);
+        const stockLevel = qty <= threshold ? 'LOW STOCK' : 'OK';
+        
+        return [
+          item.sku,
+          item.name,
+          item.category,
+          item.bin_location,
+          qty,
+          threshold,
+          item.price_php,
+          item.cost_php,
+          item.status,
+          stockLevel
+        ].map(cell => `"${cell}"`).join(',');
+      });
+
+      const csvContent = [...headers, ...rows].join('\n');
+
+      // Create blob and download
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `MotoMart-Inventory-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error(error);
+      window.alert('Excel export failed. Please try again.');
+    }
+  }
+
+  function handleExportWord() {
+    try {
+      // Create beautiful HTML content for Word
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>MotoMart Inventory Report</title>
+          <style>
+            @page { margin: 1in; }
+            body { 
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+              margin: 0;
+              padding: 0;
+              color: #1c1917;
+            }
+            .header {
+              background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+              color: white;
+              padding: 30px;
+              margin-bottom: 30px;
+              border-radius: 8px;
+            }
+            .header h1 {
+              margin: 0 0 10px 0;
+              font-size: 32px;
+              font-weight: 700;
+              letter-spacing: 2px;
+            }
+            .header p {
+              margin: 5px 0;
+              opacity: 0.9;
+              font-size: 14px;
+            }
+            .stats-grid {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 20px;
+              margin: 30px 0;
+            }
+            .stat-card {
+              background: #fef2f2;
+              border-left: 4px solid #dc2626;
+              padding: 20px;
+              border-radius: 8px;
+            }
+            .stat-card h3 {
+              margin: 0 0 5px 0;
+              font-size: 12px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              color: #991b1b;
+              font-weight: 600;
+            }
+            .stat-card .value {
+              font-size: 28px;
+              font-weight: 700;
+              color: #dc2626;
+              margin: 5px 0;
+            }
+            .stat-card .label {
+              font-size: 13px;
+              color: #78716c;
+            }
+            h2 {
+              color: #dc2626;
+              font-size: 20px;
+              margin: 40px 0 20px 0;
+              padding-bottom: 10px;
+              border-bottom: 2px solid #dc2626;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            th {
+              background: #dc2626;
+              color: white;
+              padding: 14px 12px;
+              text-align: left;
+              font-size: 11px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              font-weight: 600;
+            }
+            td {
+              border: 1px solid #e7e5e4;
+              padding: 12px;
+              font-size: 13px;
+            }
+            tr:nth-child(even) {
+              background-color: #fafaf9;
+            }
+            tr:hover {
+              background-color: #fef2f2;
+            }
+            .low-stock {
+              background-color: #fef2f2 !important;
+            }
+            .badge {
+              display: inline-block;
+              padding: 4px 10px;
+              border-radius: 12px;
+              font-size: 11px;
+              font-weight: 600;
+              text-transform: uppercase;
+            }
+            .badge-low {
+              background: #fee2e2;
+              color: #991b1b;
+            }
+            .badge-ok {
+              background: #e7e5e4;
+              color: #57534e;
+            }
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 2px solid #e7e5e4;
+              text-align: center;
+              color: #78716c;
+              font-size: 12px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🏍️ MOTOMART</h1>
+            <p><strong>Inventory Management System</strong></p>
+            <p>Generated: ${new Date().toLocaleString()}</p>
+            <p>User: ${user?.email || 'N/A'}</p>
+          </div>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <h3>Total Parts</h3>
+              <div class="value">${totalItemsCount}</div>
+              <div class="label">Tracked items</div>
+            </div>
+            <div class="stat-card">
+              <h3>Total Stock</h3>
+              <div class="value">${totalOnHandCount}</div>
+              <div class="label">Units on hand</div>
+            </div>
+            <div class="stat-card">
+              <h3>Low Stock</h3>
+              <div class="value">${lowStockCount}</div>
+              <div class="label">Items need attention</div>
+            </div>
+          </div>
+
+          <h2>📦 Inventory Details</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Bin</th>
+                <th>Qty</th>
+                <th>Threshold</th>
+                <th>Price</th>
+                <th>Cost</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${inventoryList.map(item => {
+                const qty = Number(item.quantity_on_hand || 0);
+                const threshold = Number(item.low_stock_threshold || 0);
+                const isLow = qty <= threshold;
+                return `
+                <tr class="${isLow ? 'low-stock' : ''}">
+                  <td><strong>${item.sku}</strong></td>
+                  <td>${item.name}</td>
+                  <td>${item.category}</td>
+                  <td>${item.bin_location}</td>
+                  <td><strong>${qty}</strong> / ${threshold}</td>
+                  <td>${threshold}</td>
+                  <td>${formatPhp(item.price_php)}</td>
+                  <td>${formatPhp(item.cost_php)}</td>
+                  <td><span class="badge ${isLow ? 'badge-low' : 'badge-ok'}">${isLow ? '⚠️ Low' : '✓ OK'}</span></td>
+                </tr>
+              `}).join('')}
+            </tbody>
+          </table>
+
+          <div class="footer">
+            <p><strong>Developed by DotOrbit</strong></p>
+            <p>MotoMart Inventory Management System © ${new Date().getFullYear()}</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Create blob and download
+      const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `MotoMart-Inventory-${new Date().toISOString().split('T')[0]}.doc`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error(error);
+      window.alert('Word export failed. Please try again.');
     }
   }
 
@@ -670,10 +942,83 @@ export function Dashboard() {
             <SectionHeading label="Toolkit" title="Quick Actions" theme={theme} />
 
             <div className="mt-5 space-y-3">
-              <ActionButton variant="primary" className="w-full" onClick={handleExportPdf} theme={theme}>
-                <FileDown className="h-4 w-4" />
-                Export PDF
-              </ActionButton>
+              <div className="relative">
+                <ActionButton 
+                  variant="primary" 
+                  className="w-full" 
+                  onClick={() => setExportMenuOpen(!exportMenuOpen)} 
+                  theme={theme}
+                >
+                  <FileDown className="h-4 w-4" />
+                  Export
+                  <ChevronDown className={classNames('h-3.5 w-3.5 ml-auto transition-transform', exportMenuOpen && 'rotate-180')} />
+                </ActionButton>
+                
+                <AnimatePresence>
+                  {exportMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className={classNames(
+                        'absolute left-0 top-full mt-2 w-full rounded-2xl border p-2 shadow-xl z-50',
+                        isDark 
+                          ? 'border-red-900/30 bg-stone-900' 
+                          : 'border-red-100 bg-white'
+                      )}
+                    >
+                      <button
+                        onClick={() => {
+                          handleExportPdf();
+                          setExportMenuOpen(false);
+                        }}
+                        className={classNames(
+                          'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
+                          isDark
+                            ? 'hover:bg-red-900/20 text-stone-100'
+                            : 'hover:bg-red-50 text-stone-900'
+                        )}
+                      >
+                        <FileText className="h-4 w-4 text-red-500" />
+                        <span className="font-medium">Export as PDF</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          handleExportExcel();
+                          setExportMenuOpen(false);
+                        }}
+                        className={classNames(
+                          'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
+                          isDark
+                            ? 'hover:bg-red-900/20 text-stone-100'
+                            : 'hover:bg-red-50 text-stone-900'
+                        )}
+                      >
+                        <FileSpreadsheet className="h-4 w-4 text-green-500" />
+                        <span className="font-medium">Export as Excel</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          handleExportWord();
+                          setExportMenuOpen(false);
+                        }}
+                        className={classNames(
+                          'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
+                          isDark
+                            ? 'hover:bg-red-900/20 text-stone-100'
+                            : 'hover:bg-red-50 text-stone-900'
+                        )}
+                      >
+                        <FileText className="h-4 w-4 text-blue-500" />
+                        <span className="font-medium">Export as Word</span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               <ActionButton
                 className="w-full"
@@ -861,10 +1206,84 @@ export function Dashboard() {
               </div>
 
               <div className="flex gap-2">
-                <ActionButton variant="primary" className="w-full" onClick={handleExportPdf} theme={theme}>
-                  <FileDown className="h-4 w-4" />
-                  PDF
-                </ActionButton>
+                <div className="relative">
+                  <ActionButton 
+                    variant="primary" 
+                    className="w-full" 
+                    onClick={() => setExportMenuOpen(!exportMenuOpen)} 
+                    theme={theme}
+                  >
+                    <FileDown className="h-4 w-4" />
+                    Export
+                    <ChevronDown className={classNames('h-3.5 w-3.5 transition-transform', exportMenuOpen && 'rotate-180')} />
+                  </ActionButton>
+                  
+                  <AnimatePresence>
+                    {exportMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className={classNames(
+                          'absolute right-0 top-full mt-2 w-48 rounded-2xl border p-2 shadow-xl z-50',
+                          isDark 
+                            ? 'border-red-900/30 bg-stone-900' 
+                            : 'border-red-100 bg-white'
+                        )}
+                      >
+                        <button
+                          onClick={() => {
+                            handleExportPdf();
+                            setExportMenuOpen(false);
+                          }}
+                          className={classNames(
+                            'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
+                            isDark
+                              ? 'hover:bg-red-900/20 text-stone-100'
+                              : 'hover:bg-red-50 text-stone-900'
+                          )}
+                        >
+                          <FileText className="h-4 w-4 text-red-500" />
+                          <span className="font-medium">Export as PDF</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            window.alert('Excel export coming soon!');
+                            setExportMenuOpen(false);
+                          }}
+                          className={classNames(
+                            'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
+                            isDark
+                              ? 'hover:bg-red-900/20 text-stone-100'
+                              : 'hover:bg-red-50 text-stone-900'
+                          )}
+                        >
+                          <FileSpreadsheet className="h-4 w-4 text-green-500" />
+                          <span className="font-medium">Export as Excel</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            window.alert('Word export coming soon!');
+                            setExportMenuOpen(false);
+                          }}
+                          className={classNames(
+                            'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
+                            isDark
+                              ? 'hover:bg-red-900/20 text-stone-100'
+                              : 'hover:bg-red-50 text-stone-900'
+                          )}
+                        >
+                          <FileText className="h-4 w-4 text-blue-500" />
+                          <span className="font-medium">Export as Word</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                
                 <ActionButton
                   className="w-full"
                   onClick={() => setStatus(status === 'active' ? 'archived' : 'active')}

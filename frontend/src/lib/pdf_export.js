@@ -1,52 +1,26 @@
 /*
  * MotoMart IMS
  * File: src/lib/pdf_export.js
- * Version: 1.1.0
- * Purpose: Export dashboard data to a clean PDF with tables (PDF-safe text).
- *
- * Why this exists:
- * - jsPDF's default fonts are NOT Unicode. Characters like "₱", "ñ", smart quotes, etc.
- *   can render as gibberish in exported PDFs.
- * - We keep exports stable by:
- *   1) formatting money using ASCII ("... pesos"), and
- *   2) normalizing text to a PDF-safe subset.
+ * Version: 1.3.0
+ * Purpose: Export dashboard data to a cleaner premium red-themed PDF with tables (PDF-safe text).
  */
 'use strict';
 
 import { formatPhp } from './format';
 
 const CONFIRM_LABEL = 'Confirm';
-const MOTOMART_RED = [220, 38, 38]; // tailwind red-600
-const MOTOMART_RED_DARK = [153, 27, 27];
-const MOTOMART_GRAY_BG = [17, 24, 39];
 
-function applyRedTheme(doc) {
-  // header rule
-  const w = doc.internal.pageSize.getWidth();
-  doc.setDrawColor(...MOTOMART_RED);
-  doc.setLineWidth(2);
-  doc.line(40, 54, w - 40, 54);
-}
+const MOTOMART_RED = [185, 28, 28];
+const MOTOMART_RED_DARK = [127, 29, 29];
+const MOTOMART_RED_SOFT = [254, 242, 242];
+const MOTOMART_RED_BORDER = [252, 165, 165];
+const MOTOMART_TEXT = [17, 24, 39];
+const MOTOMART_TEXT_MUTED = [75, 85, 99];
+const MOTOMART_WHITE = [255, 255, 255];
 
-function tableTheme() {
-  return {
-    theme: 'grid',
-    styles: {
-      fontSize: 9,
-      cellPadding: 6,
-      lineColor: [55, 65, 81],
-      textColor: [17, 24, 39],
-    },
-    headStyles: {
-      fontStyle: 'bold',
-      fillColor: MOTOMART_RED,
-      textColor: [255, 255, 255],
-      lineColor: MOTOMART_RED_DARK,
-    },
-    alternateRowStyles: { fillColor: [249, 250, 251] },
-  };
-}
-
+const PAGE_MARGIN_LEFT = 40;
+const PAGE_MARGIN_RIGHT = 40;
+const PAGE_FOOTER_OFFSET = 22;
 
 const PDF_SAFE_REPLACEMENTS = [
   [/₱/g, 'pesos '],
@@ -70,141 +44,249 @@ const PDF_SAFE_REPLACEMENTS = [
 
 /**
  * Normalize text to something jsPDF's built-in fonts can render.
- * (Keeps ASCII printable characters, plus newline and basic tabs.)
+ * @param {unknown} value
+ * @returns {string}
  */
-function toPdfSafeText(v) {
-  let s = String(v ?? '').trim();
+function toPdfSafeText(value) {
+  let text = String(value ?? '').trim();
 
-  for (const [re, rep] of PDF_SAFE_REPLACEMENTS) {
-    s = s.replace(re, rep);
+  for (const [pattern, replacement] of PDF_SAFE_REPLACEMENTS) {
+    text = text.replace(pattern, replacement);
   }
 
-  // Strip any remaining non-printable / non-ASCII characters.
-  s = s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
-  s = s.replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '');
+  text = text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+  text = text.replace(/[^\x09\x0A\x0D\x20-\x7E]/g, '');
 
-  return s;
+  return text;
 }
 
+/**
+ * Create current export timestamp.
+ * @returns {{ date: string, time: string }}
+ */
 function nowStamp() {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mi = String(d.getMinutes()).padStart(2, '0');
-  return { date: `${yyyy}-${mm}-${dd}`, time: `${hh}:${mi}` };
+  const currentDate = new Date();
+  const year = currentDate.getFullYear();
+  const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const day = String(currentDate.getDate()).padStart(2, '0');
+  const hour = String(currentDate.getHours()).padStart(2, '0');
+  const minute = String(currentDate.getMinutes()).padStart(2, '0');
+
+  return {
+    date: `${year}-${month}-${day}`,
+    time: `${hour}:${minute}`,
+  };
+}
+
+/**
+ * Draw a clean accent line under the header block.
+ * @param {import('jspdf').jsPDF} doc
+ * @returns {void}
+ */
+function drawHeaderDivider(doc) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  doc.setDrawColor(...MOTOMART_RED_BORDER);
+  doc.setLineWidth(1.2);
+  doc.line(
+    PAGE_MARGIN_LEFT,
+    88,
+    pageWidth - PAGE_MARGIN_RIGHT,
+    88,
+  );
+}
+
+/**
+ * Draw section title with subtle red accent.
+ * @param {import('jspdf').jsPDF} doc
+ * @param {string} title
+ * @param {number} y
+ * @returns {number}
+ */
+function drawSectionTitle(doc, title, y) {
+  doc.setFillColor(...MOTOMART_RED);
+  doc.rect(PAGE_MARGIN_LEFT, y - 9, 4, 14, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...MOTOMART_RED_DARK);
+  doc.text(toPdfSafeText(title), PAGE_MARGIN_LEFT + 10, y);
+
+  return y + 8;
+}
+
+/**
+ * Draw footer for current page.
+ * @param {import('jspdf').jsPDF} doc
+ * @returns {void}
+ */
+function drawFooter(doc) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+
+  doc.setDrawColor(...MOTOMART_RED_BORDER);
+  doc.setLineWidth(0.8);
+  doc.line(
+    PAGE_MARGIN_LEFT,
+    pageHeight - 34,
+    pageWidth - PAGE_MARGIN_RIGHT,
+    pageHeight - 34,
+  );
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...MOTOMART_RED_DARK);
+  doc.text(`Page ${pageNumber}`, pageWidth - 78, pageHeight - PAGE_FOOTER_OFFSET);
+}
+
+/**
+ * Shared red table theme.
+ * @returns {object}
+ */
+function tableTheme() {
+  return {
+    theme: 'grid',
+    styles: {
+      fontSize: 9,
+      cellPadding: 6,
+      lineColor: MOTOMART_RED_BORDER,
+      lineWidth: 0.35,
+      textColor: MOTOMART_TEXT,
+    },
+    headStyles: {
+      fontStyle: 'bold',
+      fillColor: MOTOMART_RED,
+      textColor: MOTOMART_WHITE,
+      lineColor: MOTOMART_RED_DARK,
+      lineWidth: 0.45,
+    },
+    bodyStyles: {
+      textColor: MOTOMART_TEXT,
+    },
+    alternateRowStyles: {
+      fillColor: MOTOMART_RED_SOFT,
+    },
+    margin: {
+      left: PAGE_MARGIN_LEFT,
+      right: PAGE_MARGIN_RIGHT,
+    },
+  };
 }
 
 export async function exportDashboardPdf({ user, inventory, analytics }) {
-  const [{ jsPDF }, autoTableMod] = await Promise.all([
+  const [{ jsPDF }, autoTableModule] = await Promise.all([
     import('jspdf'),
     import('jspdf-autotable'),
   ]);
 
-  // Some bundlers expose the plugin as default; we just need to ensure it runs.
-  // eslint-disable-next-line no-unused-vars
-  const _autoTable = autoTableMod?.default || autoTableMod;
+  const autoTable = autoTableModule?.default || autoTableModule;
 
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  applyRedTheme(doc);
   const pageWidth = doc.internal.pageSize.getWidth();
-
   const stamp = nowStamp();
-  const title = 'MOTOMART — Dashboard Export';
+
+  const totals = analytics?.totals || {};
+  const today = analytics?.todaySales || {};
+  const todayItems = Array.isArray(today.items) ? today.items : [];
+  const inventoryItems = Array.isArray(inventory) ? inventory : [];
+
+  const title = 'MOTOMART - Dashboard Export';
   const subtitle = `Date: ${stamp.date}  Time: ${stamp.time}`;
   const operator = `Exported by: ${toPdfSafeText(user?.full_name || user?.email || 'user')}`;
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text(toPdfSafeText(title), 40, 46);
+  doc.setFontSize(18);
+  doc.setTextColor(...MOTOMART_RED_DARK);
+  doc.text(toPdfSafeText(title), PAGE_MARGIN_LEFT, 46);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text(toPdfSafeText(subtitle), 40, 64);
-  doc.text(toPdfSafeText(operator), 40, 78);
+  doc.setTextColor(...MOTOMART_TEXT_MUTED);
+  doc.text(toPdfSafeText(subtitle), PAGE_MARGIN_LEFT, 64);
+  doc.text(toPdfSafeText(operator), PAGE_MARGIN_LEFT, 78);
 
-  // Summary cards (compact)
-  const totals = analytics?.totals || {};
-  const today = analytics?.todaySales || {};
+  drawHeaderDivider(doc);
+
   const summaryRows = [
     ['Items', String(totals.items ?? 0)],
     ['On Hand', String(totals.onHand ?? 0)],
     ['Sales Today (Units)', String(today.units ?? 0)],
     ['Sales Today (Revenue)', formatPhp(Number(today.revenue_php || 0))],
-  ].map((r) => [toPdfSafeText(r[0]), toPdfSafeText(r[1])]);
+  ].map(([label, value]) => [toPdfSafeText(label), toPdfSafeText(value)]);
 
-  // eslint-disable-next-line no-undef
-  doc.autoTable({
+  autoTable(doc, {
     ...tableTheme(),
-    startY: 92,
+    startY: 102,
     head: [['Summary', 'Value']],
     body: summaryRows,
-    margin: { left: 40, right: 40 },
+    didDrawPage: () => {
+      drawFooter(doc);
+    },
   });
 
-  let cursorY = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 18 : 140;
+  let cursorY = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 22 : 150;
 
-  // Today's Sales table
-  const todayItems = Array.isArray(today.items) ? today.items : [];
   if (todayItems.length > 0) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text(toPdfSafeText(`Sales Today — ${toPdfSafeText(today.date)}`), 40, cursorY);
-    cursorY += 10;
+    cursorY = drawSectionTitle(
+      doc,
+      `Sales Today - ${toPdfSafeText(today.date || stamp.date)}`,
+      cursorY,
+    );
 
-    const body = todayItems.map((x) => [
-      toPdfSafeText(x.sku),
-      toPdfSafeText(x.name),
-      toPdfSafeText(String(x.units ?? 0)),
-      toPdfSafeText(formatPhp(Number(x.revenue_php || 0))),
+    const salesRows = todayItems.map((item) => [
+      toPdfSafeText(item.sku),
+      toPdfSafeText(item.name),
+      toPdfSafeText(String(item.units ?? 0)),
+      toPdfSafeText(formatPhp(Number(item.revenue_php || 0))),
     ]);
 
-    // eslint-disable-next-line no-undef
-    doc.autoTable({
+    autoTable(doc, {
       ...tableTheme(),
-      startY: cursorY + 6,
+      startY: cursorY + 8,
       head: [['SKU', 'Name', 'Units', 'Revenue']],
-      body,
-      styles: { ...tableTheme().styles, fontSize: 8, cellPadding: 5 },
-      margin: { left: 40, right: 40 },
+      body: salesRows,
+      styles: {
+        ...tableTheme().styles,
+        fontSize: 8,
+        cellPadding: 5,
+      },
       columnStyles: {
         0: { cellWidth: 90 },
         1: { cellWidth: pageWidth - 40 - 40 - 90 - 60 - 90 },
         2: { cellWidth: 60, halign: 'right' },
         3: { cellWidth: 90, halign: 'right' },
       },
+      didDrawPage: () => {
+        drawFooter(doc);
+      },
     });
 
-    cursorY = (doc.lastAutoTable?.finalY || cursorY) + 18;
+    cursorY = (doc.lastAutoTable?.finalY || cursorY) + 22;
   }
 
-  // Inventory table
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text(toPdfSafeText('Inventory Snapshot'), 40, cursorY);
-  cursorY += 10;
+  cursorY = drawSectionTitle(doc, 'Inventory Snapshot', cursorY);
 
-  const inv = Array.isArray(inventory) ? inventory : [];
-  const invBody = inv.map((i) => [
-    toPdfSafeText(i.sku),
-    toPdfSafeText(i.name),
-    toPdfSafeText(i.category),
-    toPdfSafeText(i.bin_location),
-    toPdfSafeText(formatPhp(Number(i.price_php || 0))),
-    toPdfSafeText(String(i.quantity_on_hand ?? 0)),
-    toPdfSafeText(String(i.sold_units ?? 0)),
+  const inventoryRows = inventoryItems.map((item) => [
+    toPdfSafeText(item.sku),
+    toPdfSafeText(item.name),
+    toPdfSafeText(item.category),
+    toPdfSafeText(item.bin_location),
+    toPdfSafeText(formatPhp(Number(item.price_php || 0))),
+    toPdfSafeText(String(item.quantity_on_hand ?? 0)),
+    toPdfSafeText(String(item.sold_units ?? 0)),
   ]);
 
-  // eslint-disable-next-line no-undef
-  doc.autoTable({
-    startY: cursorY + 6,
+  autoTable(doc, {
+    ...tableTheme(),
+    startY: cursorY + 8,
     head: [['SKU', 'Name', 'Category', 'Bin', 'Price', 'On Hand', 'Sold']],
-    body: invBody,
-    styles: { fontSize: 7.6, cellPadding: 4 },
-    headStyles: { fontStyle: 'bold' },
-    theme: 'grid',
-    margin: { left: 40, right: 40 },
+    body: inventoryRows,
+    styles: {
+      ...tableTheme().styles,
+      fontSize: 7.6,
+      cellPadding: 4,
+    },
     columnStyles: {
       0: { cellWidth: 70 },
       1: { cellWidth: 160 },
@@ -215,13 +297,11 @@ export async function exportDashboardPdf({ user, inventory, analytics }) {
       6: { cellWidth: 45, halign: 'right' },
     },
     didDrawPage: () => {
-      const page = doc.internal.getNumberOfPages();
-      doc.setFontSize(9);
-      doc.setTextColor(...MOTOMART_RED_DARK);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Page ${page}`, pageWidth - 80, doc.internal.pageSize.getHeight() - 22);
+      drawFooter(doc);
     },
   });
+
+  drawFooter(doc);
 
   const fileName = `motomart_dashboard_${stamp.date}.pdf`;
   doc.save(fileName);

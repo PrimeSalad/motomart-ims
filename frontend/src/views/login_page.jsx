@@ -120,8 +120,8 @@ export function LoginPage() {
   const api = useMemo(() => createApiClient({ token: null }), []);
 
   const [form, setForm] = useState({
-    email: 'admin@ims.local',
-    password: 'Admin#1234'
+    email: '',
+    password: ''
   });
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState(null);
@@ -186,8 +186,8 @@ export function LoginPage() {
     } catch (requestError) {
       setError(
         requestError?.response?.data?.error?.message ||
-          requestError?.message ||
-          'Authentication failed.'
+        requestError?.message ||
+        'Authentication failed.'
       );
     } finally {
       setLoading(false);
