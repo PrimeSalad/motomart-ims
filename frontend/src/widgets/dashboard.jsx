@@ -444,7 +444,8 @@ export function Dashboard() {
     toggleUserStatus,
     deleteUser,
     updateProfile,
-    canManage
+    canManage,
+    canViewInvLogs
   } = useSystem({ logUserId: selectedLogUserId, invFilters });
 
   const inventoryList = Array.isArray(inventory) ? inventory : [];

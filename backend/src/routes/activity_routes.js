@@ -12,9 +12,8 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 const { getLogs, getInventoryLogs } = require('../controllers/activity_controller');
 
 router.use(requireAuth);
-router.use(requireRole('admin'));
 
-router.get('/logs', getLogs);
-router.get('/inventory-logs', getInventoryLogs);
+router.get('/logs', requireRole('admin'), getLogs);
+router.get('/inventory-logs', requireRole('staff'), getInventoryLogs);
 
 module.exports = router;

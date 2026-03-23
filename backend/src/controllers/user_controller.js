@@ -29,10 +29,23 @@ function isProtected(email) {
 async function listUsers(req, res, next) {
   try {
     const supabase = getDb();
-    let query = supabase.from('users').select('id, email, full_name, role, is_active, created_at');
+    const reqWeight = req.user.roleWeight || 0;
 
-    // If requester is not Super Admin (weight 30), restrict view
-    if (req.user.roleWeight < ROLE_WEIGHTS.super_admin) {
+    // Default: Staff role (weight 10) can only see IDs and Full Names of all users (for filters)
+    let selectFields = 'id, full_name';
+    
+    // If Admin (weight 20) or Super Admin (weight 30), they can see more details
+    if (reqWeight >= ROLE_WEIGHTS.admin) {
+      selectFields = 'id, email, full_name, role, is_active, created_at';
+    }
+
+    let query = supabase.from('users').select(selectFields);
+
+    // Visibility Filter:
+    // Staff can see all names/IDs for log filtering.
+    // Admins can see full details of staff.
+    // Super Admins can see everything.
+    if (reqWeight === ROLE_WEIGHTS.admin) {
       query = query.eq('role', 'staff');
     }
 
@@ -40,10 +53,10 @@ async function listUsers(req, res, next) {
     
     if (error) throw error;
 
-    // Mark protected users in the response
+    // Mark protected users if email is available (Admin+)
     const mapped = users.map(u => ({
       ...u,
-      is_protected: isProtected(u.email)
+      is_protected: u.email ? isProtected(u.email) : false
     }));
 
     return res.status(200).json({ ok: true, data: mapped });

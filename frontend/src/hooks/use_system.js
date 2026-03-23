@@ -22,6 +22,7 @@ export function useSystem(options = {}) {
 
   // Roles that can access these features
   const canManage = currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
+  const canViewInvLogs = canManage || currentUser?.role === 'staff';
 
   // Fetch Users
   const usersQuery = useQuery({
@@ -30,7 +31,7 @@ export function useSystem(options = {}) {
       const res = await api.get('/users');
       return res.data.data;
     },
-    enabled: !!token && canManage
+    enabled: !!token && canViewInvLogs
   });
 
   // Fetch Activity Logs
@@ -51,7 +52,7 @@ export function useSystem(options = {}) {
       const res = await api.get('/system/inventory-logs', { params: invFilters });
       return res.data.data;
     },
-    enabled: !!token && canManage
+    enabled: !!token && canViewInvLogs
   });
 
   // Create User
@@ -110,6 +111,7 @@ export function useSystem(options = {}) {
     deleteUser,
     updateProfile,
 
-    canManage
+    canManage,
+    canViewInvLogs
   };
 }

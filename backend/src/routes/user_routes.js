@@ -16,11 +16,12 @@ router.use(requireAuth);
 // Allow any authenticated user to update their own profile
 router.patch('/profile', c.updateProfile);
 
-router.use(requireRole('admin'));
+// Allow staff to list users (limited fields enforced in controller)
+router.get('/', requireRole('staff'), c.listUsers);
 
-router.get('/', c.listUsers);
-router.post('/', c.createUser);
-router.patch('/:id/status', c.toggleStatus);
-router.delete('/:id', c.deleteUser);
+// Management routes restricted to Admin+
+router.post('/', requireRole('admin'), c.createUser);
+router.patch('/:id/status', requireRole('admin'), c.toggleStatus);
+router.delete('/:id', requireRole('admin'), c.deleteUser);
 
 module.exports = router;
