@@ -22,7 +22,6 @@ const { logger } = require('./src/utils/logger');
 
 async function bootstrap() {
   await connectDb();
-  await seedDefaultUsers();
 
   const server = http.createServer(app);
 

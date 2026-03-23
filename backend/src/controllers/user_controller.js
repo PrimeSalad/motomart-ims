@@ -41,12 +41,8 @@ async function listUsers(req, res, next) {
 
     let query = supabase.from('users').select(selectFields);
 
-    // Visibility Filter:
-    // 1. Non-Super Admins (Staff/Admin) can see both Admins and Staff, but NOT Super Admins
-    if (reqWeight < ROLE_WEIGHTS.super_admin) {
-      query = query.in('role', ['admin', 'staff']);
-    }
-    // 2. Super Admins (30) see everyone (no filter)
+    // Visibility Filter: Hide Super Admins from EVERYONE (including other Super Admins)
+    query = query.neq('role', 'super_admin');
 
     const { data: users, error } = await query.order('full_name', { ascending: true });
     
