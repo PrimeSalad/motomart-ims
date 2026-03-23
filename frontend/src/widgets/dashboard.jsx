@@ -288,6 +288,19 @@ export function Dashboard() {
   const [selectedLogUserId, setSelectedLogUserId] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (userMenuOpen && !event.target.closest('.user-menu-container')) {
+        setUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [userMenuOpen]);
 
   const [compatMake, setCompatMake] = useState('');
   const [compatModel, setCompatModel] = useState('');
@@ -739,10 +752,10 @@ export function Dashboard() {
       style={{ fontFamily: "'Poppins', sans-serif" }}
     >
       <div className={classes.PAGE_WRAPPER}>
-        <Card className="overflow-hidden" theme={theme}>
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-4">
-              <div className={classNames('flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border', classes.BORDER, classes.BG_TERTIARY)}>
+        <nav className="p-4 sm:p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={classNames('flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border', classes.BORDER)}>
                 <img
                   src="/img/logo.jpg"
                   alt="MotoMart Logo"
@@ -751,55 +764,105 @@ export function Dashboard() {
               </div>
 
               <div>
-                <div className={classNames('text-xs font-semibold uppercase tracking-[0.24em]', classes.TEXT_SECONDARY)}>
-                  Inventory Dashboard
-                </div>
                 <h1
-                  className={classNames('mt-1 text-3xl font-bold tracking-tight sm:text-4xl', isDark ? 'text-red-400' : 'text-red-700')}
+                  className={classNames('text-2xl font-bold tracking-tight', isDark ? 'text-red-400' : 'text-red-700')}
                   style={{ fontFamily: "'Questrial', sans-serif" }}
                 >
                   MOTOMART
                 </h1>
-                <div className={classNames('mt-1 text-sm', classes.TEXT_SECONDARY)}>
-                  Clean inventory control, sales visibility, and part operations.
+                <div className={classNames('text-xs', classes.TEXT_SECONDARY)}>
+                  Inventory Dashboard
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
               <ActionButton variant="primary" onClick={() => setCreateOpen(true)} theme={theme}>
                 <Plus className="h-4 w-4" />
-                Add Part
+                <span className="hidden sm:inline">Add Part</span>
               </ActionButton>
 
               <ActionButton onClick={handleMockScan} theme={theme}>
                 <QrCode className="h-4 w-4" />
-                Mock Scan
+                <span className="hidden sm:inline">Scan</span>
               </ActionButton>
-
-              {canManage && (
-                <ActionButton onClick={() => setSettingsOpen(true)} theme={theme}>
-                  <Shield className="h-4 w-4" />
-                  System
-                </ActionButton>
-              )}
 
               <ActionButton onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} theme={theme}>
                 {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </ActionButton>
 
-              <ActionButton onClick={() => setProfileOpen(true)} theme={theme}>
-                <User className="h-4 w-4" />
-                Profile
-              </ActionButton>
+              <div className="relative user-menu-container">
+                <ActionButton onClick={() => setUserMenuOpen(!userMenuOpen)} theme={theme}>
+                  <User className="h-4 w-4" />
+                  <ChevronDown className={classNames('h-4 w-4 transition-transform', userMenuOpen && 'rotate-180')} />
+                </ActionButton>
 
-              <ActionButton onClick={logout} theme={theme}>
-                <LogOut className="h-4 w-4" />
-                Logout
-              </ActionButton>
+                <AnimatePresence>
+                  {userMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.15 }}
+                      className={classNames(
+                        'absolute right-0 top-full z-50 mt-2 w-48 rounded-2xl border p-2 shadow-xl',
+                        classes.CARD
+                      )}
+                    >
+                      {canManage && (
+                        <button
+                          onClick={() => {
+                            setSettingsOpen(true);
+                            setUserMenuOpen(false);
+                          }}
+                          className={classNames(
+                            'flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-colors',
+                            isDark ? 'hover:bg-stone-800' : 'hover:bg-red-50',
+                            classes.TEXT_PRIMARY
+                          )}
+                        >
+                          <Shield className="h-4 w-4" />
+                          System
+                        </button>
+                      )}
+                      
+                      <button
+                        onClick={() => {
+                          setProfileOpen(true);
+                          setUserMenuOpen(false);
+                        }}
+                        className={classNames(
+                          'flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-colors',
+                          isDark ? 'hover:bg-stone-800' : 'hover:bg-red-50',
+                          classes.TEXT_PRIMARY
+                        )}
+                      >
+                        <User className="h-4 w-4" />
+                        Profile
+                      </button>
+
+                      <div className={classNames('my-2 h-px', isDark ? 'bg-red-900/30' : 'bg-red-100')} />
+
+                      <button
+                        onClick={() => {
+                          logout();
+                          setUserMenuOpen(false);
+                        }}
+                        className={classNames(
+                          'flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-colors',
+                          isDark ? 'text-red-400 hover:bg-red-950/40' : 'text-red-700 hover:bg-red-100'
+                        )}
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
-        </Card>
+        </nav>
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard
