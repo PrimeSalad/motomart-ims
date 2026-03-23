@@ -2056,7 +2056,7 @@ export function Dashboard() {
               >
                 <option value="">All Actors</option>
                 {users.map(u => (
-                  <option key={u.id} value={u.id}>{u.full_name}</option>
+                  <option key={u.id} value={u.id}>{u.full_name} ({u.role})</option>
                 ))}
               </select>
 
