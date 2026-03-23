@@ -283,6 +283,7 @@ function getFriendlyLogMessage(log) {
 
   const body = parsedDetails.body || {};
   const params = parsedDetails.params || {};
+  const meta = parsedDetails.metadata || {};
 
   // Inventory Routes
   if (resource.includes('/api/inventory')) {
@@ -299,6 +300,11 @@ function getFriendlyLogMessage(log) {
 
   // User Routes
   if (resource.includes('/api/users')) {
+    if (action === 'USER_ACTIVATION') return `Activated account for: ${meta.target_name || meta.target_email || 'User'}`;
+    if (action === 'USER_DEACTIVATION') return `Deactivated account for: ${meta.target_name || meta.target_email || 'User'}`;
+    if (action === 'USER_CREATION') return `Created new user: ${meta.target_name || meta.target_email || ''}`;
+    if (action === 'USER_DELETION') return `Deleted account for: ${meta.target_name || meta.target_email || 'User'}`;
+    
     if (resource.includes('/status')) return `${body.is_active ? 'Activated' : 'Deactivated'} user account`;
     if (resource.includes('/profile')) return `Updated personal profile`;
     if (action === 'POST') return `Created new user: ${body.full_name || body.email || ''}`;
@@ -1866,6 +1872,25 @@ export function Dashboard() {
             <div className="space-y-6">
               <div className="space-y-3">
                 <SectionHeading label="Workforce" title="Active Members" theme={theme} />
+                
+                {(deleteUser.isError || toggleUserStatus.isError) && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={classNames(
+                      'flex items-center gap-3 rounded-2xl border p-3 text-xs',
+                      isDark ? 'border-red-900/50 bg-red-950/30 text-red-400' : 'border-red-200 bg-red-50 text-red-700'
+                    )}
+                  >
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <span className="font-medium">
+                      {deleteUser.error?.response?.data?.error?.message || 
+                       toggleUserStatus.error?.response?.data?.error?.message || 
+                       'Security Violation: Operation failed.'}
+                    </span>
+                  </motion.div>
+                )}
+
                 {usersLoading ? (
                   <div className="text-sm py-4">Loading team...</div>
                 ) : users.length > 0 ? (
@@ -1876,6 +1901,7 @@ export function Dashboard() {
                           <div className="text-sm font-semibold flex items-center gap-2">
                             {u.full_name}
                             {u.is_protected && <Shield className="h-3 w-3 text-red-500" title="System Owner" />}
+                            {u.id === user.id && <span className="text-[10px] bg-red-500/20 text-red-500 px-1.5 py-0.5 rounded-full font-bold">YOU</span>}
                           </div>
                           <div className="text-xs text-stone-500">{u.email} • <span className="uppercase">{u.role}</span></div>
                         </div>
@@ -1967,7 +1993,15 @@ export function Dashboard() {
                   <ActionButton variant="primary" type="submit" className="w-full" disabled={createUser.isPending}>
                     {createUser.isPending ? 'Creating...' : 'Create Account'}
                   </ActionButton>
-                  {createUser.isError && <div className="text-xs text-red-500">{createUser.error?.response?.data?.error?.message || 'Failed to create user'}</div>}
+                  {createUser.isError && (
+                    <div className={classNames(
+                      'mt-2 flex items-center gap-2 rounded-xl border p-2 text-[10px] font-medium',
+                      isDark ? 'border-red-900/50 bg-red-950/20 text-red-400' : 'border-red-100 bg-red-50 text-red-700'
+                    )}>
+                      <AlertTriangle className="h-3 w-3" />
+                      {createUser.error?.response?.data?.error?.message || 'Failed to create user'}
+                    </div>
+                  )}
                 </form>
               </div>
             </div>

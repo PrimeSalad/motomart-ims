@@ -104,6 +104,15 @@ async function createUser(req, res, next) {
 
     if (error) throw error;
 
+    // Audit Logging
+    req.activityAction = 'USER_CREATION';
+    req.activityMetadata = {
+      target_id: newUser.id,
+      target_email: newUser.email,
+      target_role: newUser.role,
+      target_name: newUser.full_name
+    };
+
     return res.status(201).json({ ok: true, data: newUser });
   } catch (e) {
     next(e);
@@ -121,7 +130,7 @@ async function toggleStatus(req, res, next) {
     const supabase = getDb();
     
     // Fetch target
-    const { data: target, error: fetchErr } = await supabase.from('users').select('email, role').eq('id', id).single();
+    const { data: target, error: fetchErr } = await supabase.from('users').select('id, email, role, full_name').eq('id', id).single();
     if (fetchErr || !target) return next(new AppError('User not found.', 404, 'NOT_FOUND'));
 
     // Safety Lock: Cannot deactivate a System Owner
@@ -131,7 +140,10 @@ async function toggleStatus(req, res, next) {
 
     // Hierarchy Check: 
     // 1. Cannot modify someone with a strictly higher role.
-    if (ROLE_WEIGHTS[target.role] > req.user.roleWeight) {
+    const targetWeight = ROLE_WEIGHTS[target.role] || 0;
+    const actorWeight = req.user.roleWeight || 0;
+
+    if (targetWeight > actorWeight) {
        return next(new AppError('Insufficient permissions to modify this user.', 403, 'FORBIDDEN'));
     }
 
@@ -142,6 +154,15 @@ async function toggleStatus(req, res, next) {
 
     const { error: updateErr } = await supabase.from('users').update({ is_active }).eq('id', id);
     if (updateErr) throw updateErr;
+
+    // Audit Logging
+    req.activityAction = is_active ? 'USER_ACTIVATION' : 'USER_DEACTIVATION';
+    req.activityMetadata = {
+      target_id: target.id,
+      target_email: target.email,
+      target_role: target.role,
+      target_name: target.full_name
+    };
 
     return res.status(200).json({ ok: true });
   } catch (e) {
@@ -157,7 +178,7 @@ async function deleteUser(req, res, next) {
     const { id } = req.params;
     const supabase = getDb();
 
-    const { data: target, error: fetchErr } = await supabase.from('users').select('email, role').eq('id', id).single();
+    const { data: target, error: fetchErr } = await supabase.from('users').select('email, role, full_name').eq('id', id).single();
     if (fetchErr || !target) return next(new AppError('User not found.', 404, 'NOT_FOUND'));
 
     // Safety Lock: Cannot delete yourself
@@ -172,7 +193,10 @@ async function deleteUser(req, res, next) {
 
     // Hierarchy Check:
     // 1. Cannot delete someone with a strictly higher role.
-    if (ROLE_WEIGHTS[target.role] > req.user.roleWeight) {
+    const targetWeight = ROLE_WEIGHTS[target.role] || 0;
+    const actorWeight = req.user.roleWeight || 0;
+
+    if (targetWeight > actorWeight) {
        return next(new AppError('Insufficient permissions to delete this user.', 403, 'FORBIDDEN'));
     }
 
@@ -183,6 +207,15 @@ async function deleteUser(req, res, next) {
 
     const { error: deleteErr } = await supabase.from('users').delete().eq('id', id);
     if (deleteErr) throw deleteErr;
+
+    // Audit Logging
+    req.activityAction = 'USER_DELETION';
+    req.activityMetadata = {
+      target_id: id,
+      target_email: target.email,
+      target_role: target.role,
+      target_name: target.full_name
+    };
 
     return res.status(200).json({ ok: true });
   } catch (e) {

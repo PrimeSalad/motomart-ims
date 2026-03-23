@@ -35,14 +35,15 @@ async function activityLogger(req, res, next) {
       user_id: req.user.id,
       user_name: req.user.name,
       user_email: req.user.email,
-      action: req.method,
+      action: req.activityAction || req.method,
       resource: req.originalUrl,
       status_code: res.statusCode,
       ip_address: req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown',
       details: JSON.stringify({
         params: req.params,
         query: req.query,
-        body: maskSensitiveData(req.body)
+        body: maskSensitiveData(req.body),
+        metadata: req.activityMetadata || {}
       }),
       created_at: new Date()
     };
