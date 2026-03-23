@@ -119,11 +119,13 @@ export function LoginPage() {
   const navigate = useNavigate();
   const api = useMemo(() => createApiClient({ token: null }), []);
 
+  const savedEmail = localStorage.getItem('cc_ims_remembered_email') || '';
+
   const [form, setForm] = useState({
-    email: '',
+    email: savedEmail,
     password: ''
   });
-  const [remember, setRemember] = useState(true);
+  const [remember, setRemember] = useState(!!savedEmail || true);
   const [error, setError] = useState(null);
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -142,8 +144,10 @@ export function LoginPage() {
       navigate('/', { replace: true });
     }
 
-    emailRef.current?.focus?.();
-  }, [token, navigate]);
+    if (!savedEmail) {
+      emailRef.current?.focus?.();
+    }
+  }, [token, navigate, savedEmail]);
 
   /**
    * Validate login form.
@@ -181,6 +185,13 @@ export function LoginPage() {
 
     try {
       const response = await api.post('/auth/login', { ...form });
+      
+      if (remember) {
+        localStorage.setItem('cc_ims_remembered_email', form.email);
+      } else {
+        localStorage.removeItem('cc_ims_remembered_email');
+      }
+
       setAuth(response.data.data, { remember });
       navigate('/', { replace: true });
     } catch (requestError) {
