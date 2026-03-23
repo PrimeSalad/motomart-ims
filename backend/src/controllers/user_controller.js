@@ -160,6 +160,11 @@ async function deleteUser(req, res, next) {
     const { data: target, error: fetchErr } = await supabase.from('users').select('email, role').eq('id', id).single();
     if (fetchErr || !target) return next(new AppError('User not found.', 404, 'NOT_FOUND'));
 
+    // Safety Lock: Cannot delete yourself
+    if (id === req.user.id) {
+      return next(new AppError('Security Violation: You cannot delete your own account.', 403, 'FORBIDDEN'));
+    }
+
     // Safety Lock: Cannot delete a System Owner
     if (isProtected(target.email)) {
       return next(new AppError('Security Violation: Cannot delete a protected administrator account.', 403, 'FORBIDDEN'));

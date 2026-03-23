@@ -1894,7 +1894,7 @@ export function Dashboard() {
                           <ActionButton 
                             theme={theme} 
                             className="!px-2 !py-1 !text-xs !rounded-lg"
-                            disabled={u.is_protected || (u.role === 'super_admin' && !user.isSystemOwner)}
+                            disabled={u.is_protected || (u.role === 'super_admin' && !user.isSystemOwner) || u.id === user.id}
                             onClick={async () => {
                               const nextStatus = !u.is_active;
                               if (window.confirm(`${nextStatus ? 'Activate' : 'Deactivate'} ${u.full_name}?`)) {
@@ -1908,7 +1908,7 @@ export function Dashboard() {
                             variant="danger" 
                             theme={theme} 
                             className="!px-2 !py-1 !text-xs !rounded-lg"
-                            disabled={u.is_protected || (u.role === 'super_admin' && !user.isSystemOwner)}
+                            disabled={u.is_protected || (u.role === 'super_admin' && !user.isSystemOwner) || u.id === user.id}
                             onClick={async () => {
                               if (window.confirm(`Permanently delete ${u.full_name}?`)) {
                                 await deleteUser.mutateAsync({ id: u.id });
