@@ -31,10 +31,10 @@ async function listUsers(req, res, next) {
     const supabase = getDb();
     const reqWeight = req.user.roleWeight || 0;
 
-    // Default: Staff role (weight 10) can only see IDs and Full Names of all users (for filters)
-    let selectFields = 'id, full_name';
+    // Default: Minimum fields (for log filtering)
+    let selectFields = 'id, full_name, role';
     
-    // If Admin (weight 20) or Super Admin (weight 30), they can see more details
+    // If Admin+ (weight 20+), they can see more sensitive details
     if (reqWeight >= ROLE_WEIGHTS.admin) {
       selectFields = 'id, email, full_name, role, is_active, created_at';
     }
@@ -42,12 +42,15 @@ async function listUsers(req, res, next) {
     let query = supabase.from('users').select(selectFields);
 
     // Visibility Filter:
-    // Staff can see all names/IDs for log filtering.
-    // Admins can see full details of staff.
-    // Super Admins can see everything.
-    if (reqWeight === ROLE_WEIGHTS.admin) {
+    // 1. Staff (10) can only see other Staff
+    if (reqWeight === ROLE_WEIGHTS.staff) {
       query = query.eq('role', 'staff');
     }
+    // 2. Admins (20) can see Admins and Staff (not Super Admins)
+    else if (reqWeight === ROLE_WEIGHTS.admin) {
+      query = query.in('role', ['admin', 'staff']);
+    }
+    // 3. Super Admins (30) see everyone (no filter)
 
     const { data: users, error } = await query.order('full_name', { ascending: true });
     
