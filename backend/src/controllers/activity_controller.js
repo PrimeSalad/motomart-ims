@@ -25,9 +25,9 @@ async function getLogs(req, res, next) {
     // Determine which roles this user is allowed to monitor
     let allowedRoles = [];
     if (reqWeight >= ROLE_WEIGHTS.super_admin) {
-      allowedRoles = ['admin', 'staff'];
+      allowedRoles = ['super_admin', 'admin', 'staff']; // Super Admins can see everyone's logs
     } else if (reqWeight >= ROLE_WEIGHTS.admin) {
-      allowedRoles = ['staff'];
+      allowedRoles = ['staff']; // Regular Admins can only see Staff logs
     }
 
     if (allowedRoles.length === 0) {
