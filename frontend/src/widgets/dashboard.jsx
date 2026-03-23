@@ -41,7 +41,8 @@ import {
   YAxis,
   Tooltip,
   BarChart,
-  Bar
+  Bar,
+  Cell
 } from 'recharts';
 import QRCode from 'qrcode';
 
@@ -964,7 +965,12 @@ export function Dashboard() {
                         boxShadow: isDark ? '0 10px 30px rgba(220,38,38,0.2)' : '0 10px 30px rgba(0,0,0,0.06)'
                       }}
                     />
-                    <Bar dataKey="ratio" fill={isDark ? '#ef4444' : '#dc2626'} radius={[10, 10, 0, 0]} />
+                    <Bar dataKey="ratio" radius={[10, 10, 0, 0]}>
+                      {(analytics?.stockToSalesRatio || []).map((entry, index) => {
+                        const redShades = ['#dc2626', '#ef4444', '#f87171', '#fca5a5', '#fecaca', '#fee2e2', '#991b1b'];
+                        return <Cell key={`cell-${index}`} fill={redShades[index % redShades.length]} />;
+                      })}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               )}
