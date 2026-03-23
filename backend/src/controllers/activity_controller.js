@@ -100,13 +100,34 @@ async function getInventoryLogs(req, res, next) {
     const offset = Number(req.query.offset || 0);
     const { actorId, action, startDate, endDate, sort = 'desc' } = req.query;
     const supabase = getDb();
+    const reqWeight = req.user.roleWeight || 0;
+
+    // 1. Get IDs of Super Admins to exclude them if needed
+    const { data: superAdmins, error: saErr } = await supabase
+      .from('users')
+      .select('id')
+      .eq('role', 'super_admin');
+    
+    if (saErr) throw saErr;
+    const superAdminIds = (superAdmins || []).map(u => u.id);
 
     let query = supabase
       .from('inventory_audit_logs')
       .select('*, inventory_items:item_id(name, sku), actor:actor_user_id(full_name)', { count: 'exact' });
 
-    // Filters
-    if (actorId) query = query.eq('actor_user_id', actorId);
+    // 2. PRIVACY FILTER: If requester is NOT a Super Admin, hide Super Admin activities
+    if (reqWeight < ROLE_WEIGHTS.super_admin) {
+      if (superAdminIds.length > 0) {
+        query = query.not('actor_user_id', 'in', `(${superAdminIds.join(',')})`);
+      }
+    }
+
+    // 3. User Filter (if they selected a specific actor in the UI)
+    if (actorId) {
+      // If they are trying to view a Super Admin and they aren't one, they'll get no results due to the filter above
+      query = query.eq('actor_user_id', actorId);
+    }
+    
     if (action) query = query.eq('action', action);
     if (startDate) query = query.gte('created_at', startDate);
     if (endDate) query = query.lte('created_at', endDate);
