@@ -80,7 +80,13 @@ CREATE TABLE IF NOT EXISTS inventory_audit_logs (
 CREATE TABLE IF NOT EXISTS system_activity_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id),
+  user_name TEXT,
+  user_email TEXT,
   action TEXT NOT NULL,
+  resource TEXT,
+  status_code INTEGER,
+  ip_address TEXT,
+  details JSONB,
   metadata JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
