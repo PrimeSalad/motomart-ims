@@ -61,7 +61,7 @@ const getThemeClasses = (isDark) => ({
   LAYOUT_CONTAINER: isDark 
     ? 'min-h-screen bg-stone-950 text-stone-100' 
     : 'min-h-screen bg-red-50 text-stone-900',
-  PAGE_WRAPPER: 'max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8',
+  PAGE_WRAPPER: 'max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8',
   CARD: isDark
     ? 'rounded-3xl border border-red-900/30 bg-stone-900'
     : 'rounded-3xl border border-red-100 bg-white',
@@ -150,10 +150,10 @@ function classNames(...values) {
 function SectionHeading({ label, title, action, theme }) {
   const classes = getThemeClasses(theme === 'dark');
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div>
+    <div className="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0 flex-1">
         <div className={classes.SECTION_LABEL}>{label}</div>
-        <h2 className={classes.SECTION_TITLE}>{title}</h2>
+        <h2 className={classNames(classes.SECTION_TITLE, 'truncate')}>{title}</h2>
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
@@ -192,7 +192,7 @@ function ActionButton({
 
 function Card({ children, className = '', theme }) {
   const classes = getThemeClasses(theme === 'dark');
-  return <div className={classNames(classes.CARD, 'p-5 sm:p-6', className)}>{children}</div>;
+  return <div className={classNames(classes.CARD, 'p-4 sm:p-5 lg:p-6', className)}>{children}</div>;
 }
 
 function MetricCard({ icon: Icon, label, value, helper, theme }) {
@@ -200,14 +200,14 @@ function MetricCard({ icon: Icon, label, value, helper, theme }) {
   const isDark = theme === 'dark';
   return (
     <Card theme={theme}>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className={classNames('text-sm font-medium', classes.TEXT_SECONDARY)}>{label}</div>
-          <div className={classNames('mt-2 text-3xl font-bold tracking-tight', isDark ? 'text-red-400' : 'text-red-700')}>{value}</div>
-          {helper ? <div className={classNames('mt-2 text-sm', classes.TEXT_SECONDARY)}>{helper}</div> : null}
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="flex-1 min-w-0">
+          <div className={classNames('text-xs sm:text-sm font-medium', classes.TEXT_SECONDARY)}>{label}</div>
+          <div className={classNames('mt-1.5 sm:mt-2 text-2xl sm:text-3xl font-bold tracking-tight truncate', isDark ? 'text-red-400' : 'text-red-700')}>{value}</div>
+          {helper ? <div className={classNames('mt-1.5 sm:mt-2 text-xs sm:text-sm', classes.TEXT_SECONDARY)}>{helper}</div> : null}
         </div>
-        <div className={classNames('rounded-2xl border p-3', isDark ? 'border-red-900/40 bg-stone-800' : 'border-red-200 bg-red-50')}>
-          <Icon className={classNames('h-5 w-5', isDark ? 'text-red-400' : 'text-red-600')} />
+        <div className={classNames('rounded-xl sm:rounded-2xl border p-2 sm:p-3 flex-shrink-0', isDark ? 'border-red-900/40 bg-stone-800' : 'border-red-200 bg-red-50')}>
+          <Icon className={classNames('h-4 w-4 sm:h-5 sm:w-5', isDark ? 'text-red-400' : 'text-red-600')} />
         </div>
       </div>
     </Card>
@@ -221,7 +221,7 @@ function Modal({ open, title, children, onClose, theme }) {
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -232,19 +232,19 @@ function Modal({ open, title, children, onClose, theme }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 14, scale: 0.98 }}
             transition={{ duration: 0.18 }}
-            className={classNames('relative w-full max-w-2xl rounded-3xl border p-5 shadow-2xl sm:p-6', classes.CARD)}
+            className={classNames('relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl border p-4 sm:p-5 lg:p-6 shadow-2xl', classes.CARD)}
             style={{ fontFamily: "'Poppins', sans-serif" }}
           >
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-3 sm:gap-4">
               <h3
-                className={classNames('text-xl font-semibold', classes.TEXT_PRIMARY)}
+                className={classNames('text-lg sm:text-xl font-semibold', classes.TEXT_PRIMARY)}
                 style={{ fontFamily: "'Questrial', sans-serif" }}
               >
                 {title}
               </h3>
-              <ActionButton onClick={onClose} theme={theme}>Close</ActionButton>
+              <ActionButton onClick={onClose} theme={theme} className="!px-3 sm:!px-4">Close</ActionButton>
             </div>
-            <div className="mt-5">{children}</div>
+            <div className="mt-4 sm:mt-5">{children}</div>
           </motion.div>
         </motion.div>
       ) : null}
@@ -257,7 +257,7 @@ function InventoryRow({ children, isLowStock = false, theme }) {
   return (
     <div
       className={classNames(
-        'grid grid-cols-12 gap-4 rounded-2xl border px-4 py-4 transition-all duration-200',
+        'grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 rounded-2xl border px-3 sm:px-4 py-3 sm:py-4 transition-all duration-200',
         isLowStock
           ? isDark
             ? 'border-red-900/50 bg-red-950/40 hover:bg-red-950/60'
@@ -873,10 +873,10 @@ export function Dashboard() {
       style={{ fontFamily: "'Poppins', sans-serif" }}
     >
       <div className={classes.PAGE_WRAPPER}>
-        <nav className="p-4 sm:p-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className={classNames('flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border', classes.BORDER)}>
+        <nav className="p-3 sm:p-4 lg:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className={classNames('flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center overflow-hidden rounded-2xl border', classes.BORDER)}>
                 <img
                   src="/img/logo.jpg"
                   alt="MotoMart Logo"
@@ -886,7 +886,7 @@ export function Dashboard() {
 
               <div>
                 <h1
-                  className={classNames('text-2xl font-bold tracking-tight', isDark ? 'text-red-400' : 'text-red-700')}
+                  className={classNames('text-lg sm:text-2xl font-bold tracking-tight', isDark ? 'text-red-400' : 'text-red-700')}
                   style={{ fontFamily: "'Questrial', sans-serif" }}
                 >
                   MOTOMART
@@ -897,25 +897,26 @@ export function Dashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <ActionButton variant="primary" onClick={() => setCreateOpen(true)} theme={theme}>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <ActionButton variant="primary" onClick={() => setCreateOpen(true)} theme={theme} className="!px-2.5 sm:!px-4">
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Add Part</span>
+                <span className="inline sm:hidden">Add</span>
               </ActionButton>
 
-              <ActionButton onClick={handleMockScan} theme={theme}>
+              <ActionButton onClick={handleMockScan} theme={theme} className="!px-2.5 sm:!px-4">
                 <QrCode className="h-4 w-4" />
-                <span className="hidden sm:inline">Scan</span>
+                <span className="hidden lg:inline">Scan</span>
               </ActionButton>
 
-              <ActionButton onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} theme={theme}>
+              <ActionButton onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} theme={theme} className="!px-2.5 sm:!px-4">
                 {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </ActionButton>
 
               <div className="relative user-menu-container">
-                <ActionButton onClick={() => setUserMenuOpen(!userMenuOpen)} theme={theme}>
+                <ActionButton onClick={() => setUserMenuOpen(!userMenuOpen)} theme={theme} className="!px-2.5 sm:!px-4">
                   <User className="h-4 w-4" />
-                  <ChevronDown className={classNames('h-4 w-4 transition-transform', userMenuOpen && 'rotate-180')} />
+                  <ChevronDown className={classNames('h-4 w-4 transition-transform hidden sm:inline', userMenuOpen && 'rotate-180')} />
                 </ActionButton>
 
                 <AnimatePresence>
@@ -1000,7 +1001,7 @@ export function Dashboard() {
           </div>
         </nav>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             icon={Wrench}
             label="Parts"
@@ -1031,8 +1032,8 @@ export function Dashboard() {
           />
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <Card className="xl:col-span-2" theme={theme}>
+        <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
+          <Card className="lg:col-span-2" theme={theme}>
             <SectionHeading
               label="Analytics"
               title="Revenue Trends"
@@ -1040,12 +1041,12 @@ export function Dashboard() {
               action={
                 <div className={classes.CHIP}>
                   <BarChart3 className="h-4 w-4" />
-                  <span>Live</span>
+                  <span className="hidden sm:inline">Live</span>
                 </div>
               }
             />
 
-            <div className="mt-5 h-72">
+            <div className="mt-4 sm:mt-5 h-56 sm:h-72">
               {analyticsLoading ? (
                 <div className={classNames('flex h-full items-center justify-center text-sm', classes.TEXT_SECONDARY)}>
                   Loading chart...
@@ -1080,7 +1081,7 @@ export function Dashboard() {
 
           <Card theme={theme}>
             <SectionHeading label="Ratio" title="Stock-to-Sales" theme={theme} />
-            <div className="mt-5 h-72">
+            <div className="mt-4 sm:mt-5 h-56 sm:h-72">
               {analyticsLoading ? (
                 <div className={classNames('flex h-full items-center justify-center text-sm', classes.TEXT_SECONDARY)}>
                   Loading chart...
@@ -1113,8 +1114,8 @@ export function Dashboard() {
           </Card>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <Card className="xl:col-span-2" theme={theme}>
+        <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
+          <Card className="lg:col-span-2" theme={theme}>
             <SectionHeading
               label="Daily Sales Log"
               title="Sales Today"
@@ -1122,17 +1123,17 @@ export function Dashboard() {
               action={
                 <div className={classes.CHIP}>
                   <ShoppingCart className="h-4 w-4" />
-                  <span>{todaySales.date}</span>
+                  <span className="hidden sm:inline">{todaySales.date}</span>
                 </div>
               }
             />
 
-            <div className="mt-5">
+            <div className="mt-4 sm:mt-5">
               {analyticsLoading ? (
                 <div className={classNames('text-sm', classes.TEXT_SECONDARY)}>Loading today sales...</div>
               ) : todaySalesItems.length > 0 ? (
-                <div className="space-y-3">
-                  <div className="hidden grid-cols-12 gap-3 px-3 md:grid">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="hidden grid-cols-12 gap-3 px-3 lg:grid">
                     <div className={classNames(classes.TABLE_HEADER, 'col-span-3')}>SKU</div>
                     <div className={classNames(classes.TABLE_HEADER, 'col-span-5')}>Name</div>
                     <div className={classNames(classes.TABLE_HEADER, 'col-span-1 text-right')}>Units</div>
@@ -1142,18 +1143,18 @@ export function Dashboard() {
                   {todaySalesItems.map((item) => (
                     <div
                       key={item.sku}
-                      className={classNames('grid grid-cols-12 gap-3 rounded-2xl border px-3 py-3', classes.BORDER, classes.BG_SECONDARY)}
+                      className={classNames('grid grid-cols-2 sm:grid-cols-12 gap-2 sm:gap-3 rounded-2xl border px-3 py-3', classes.BORDER, classes.BG_SECONDARY)}
                     >
-                      <div className={classNames('col-span-12 text-sm font-semibold md:col-span-3', classes.TEXT_PRIMARY)}>
+                      <div className={classNames('col-span-2 sm:col-span-12 text-sm font-semibold lg:col-span-3', classes.TEXT_PRIMARY)}>
                         {item.sku}
                       </div>
-                      <div className={classNames('col-span-12 text-sm md:col-span-5', classes.TEXT_TERTIARY)}>
+                      <div className={classNames('col-span-2 sm:col-span-12 text-sm lg:col-span-5', classes.TEXT_TERTIARY)}>
                         {item.name}
                       </div>
-                      <div className={classNames('col-span-6 text-right text-sm md:col-span-1', classes.TEXT_TERTIARY)}>
+                      <div className={classNames('col-span-1 text-right text-sm lg:col-span-1', classes.TEXT_TERTIARY)}>
                         {item.units}
                       </div>
-                      <div className={classNames('col-span-6 text-right text-sm font-semibold md:col-span-3', classes.TEXT_PRIMARY)}>
+                      <div className={classNames('col-span-1 text-right text-sm font-semibold lg:col-span-3', classes.TEXT_PRIMARY)}>
                         {formatPhp(Number(item.revenue_php || 0))}
                       </div>
                     </div>
@@ -1180,7 +1181,7 @@ export function Dashboard() {
           <Card theme={theme}>
             <SectionHeading label="Toolkit" title="Quick Actions" theme={theme} />
 
-            <div className="mt-5 space-y-3">
+            <div className="mt-4 sm:mt-5 space-y-2 sm:space-y-3">
               <div className="relative">
                 <ActionButton 
                   variant="primary" 
@@ -1270,8 +1271,8 @@ export function Dashboard() {
           </Card>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <Card className="xl:col-span-2" theme={theme}>
+        <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
+          <Card className="lg:col-span-2" theme={theme}>
             <SectionHeading
               label="Smart Suggestions"
               title="Suggested Parts"
@@ -1279,13 +1280,13 @@ export function Dashboard() {
               action={
                 <div className={classes.CHIP}>
                   <Search className="h-4 w-4" />
-                  <span>Gemini AI</span>
+                  <span className="hidden sm:inline">Gemini AI</span>
                 </div>
               }
             />
 
             <form
-              className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4"
+              className="mt-4 sm:mt-5 grid grid-cols-1 gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4"
               onSubmit={handleCompatibilitySubmit}
             >
               <input
@@ -1317,7 +1318,7 @@ export function Dashboard() {
               </ActionButton>
             </form>
 
-            <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="mt-4 sm:mt-5 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
               <div className={classNames('rounded-2xl border p-4', classes.BORDER, classes.BG_SECONDARY)}>
                 <div className={classNames('text-sm font-semibold', classes.TEXT_PRIMARY)}>Bike</div>
                 <div className={classNames('mt-1 text-sm', classes.TEXT_SECONDARY)}>Input reference for AI suggestions.</div>
@@ -1369,7 +1370,7 @@ export function Dashboard() {
           <Card theme={theme}>
             <SectionHeading label="QR / Barcode" title="SKU Generator" theme={theme} />
 
-            <div className="mt-5">
+            <div className="mt-4 sm:mt-5">
               <input
                 className={classes.INPUT}
                 placeholder="Enter SKU"
@@ -1378,21 +1379,21 @@ export function Dashboard() {
               />
 
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                <ActionButton variant="primary" className="w-full" onClick={generateQrCode} theme={theme}>
+                <ActionButton variant="primary" className="w-full sm:flex-1" onClick={generateQrCode} theme={theme}>
                   <QrCode className="h-4 w-4" />
                   Generate
                 </ActionButton>
-                <ActionButton className="w-full" onClick={() => setQrDataUrl(null)} theme={theme}>
+                <ActionButton className="w-full sm:flex-1" onClick={() => setQrDataUrl(null)} theme={theme}>
                   Clear
                 </ActionButton>
               </div>
 
               {qrDataUrl ? (
-                <div className={classNames('mt-5 flex items-center justify-center rounded-2xl border p-4', classes.BORDER, classes.BG_SECONDARY)}>
+                <div className={classNames('mt-4 sm:mt-5 flex items-center justify-center rounded-2xl border p-4', classes.BORDER, classes.BG_SECONDARY)}>
                   <img
                     src={qrDataUrl}
                     alt="SKU QR"
-                    className={classNames('h-44 w-44 rounded-2xl border p-2', classes.BORDER, isDark ? 'bg-stone-800' : 'bg-white')}
+                    className={classNames('h-36 w-36 sm:h-44 sm:w-44 rounded-2xl border p-2', classes.BORDER, isDark ? 'bg-stone-800' : 'bg-white')}
                   />
                 </div>
               ) : null}
@@ -1404,21 +1405,21 @@ export function Dashboard() {
           </Card>
         </div>
 
-        <Card className="mt-6" theme={theme}>
+        <Card className="mt-4 sm:mt-6" theme={theme}>
           <SectionHeading
             label="Inventory"
             title={status === 'archived' ? 'Archived Parts' : 'Parts'}
             theme={theme}
             action={
               <div className={classes.CHIP}>
-                <span>Results</span>
+                <span className="hidden sm:inline">Results</span>
                 <span className={classNames('font-semibold', classes.TEXT_PRIMARY)}>{inventoryList.length}</span>
               </div>
             }
           />
 
-          <div className="mt-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3 xl:max-w-3xl">
+          <div className="mt-4 sm:mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="grid w-full grid-cols-1 gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:max-w-3xl">
               <div className="relative">
                 <Search className={classNames('pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2', classes.TEXT_SECONDARY)} />
                 <input
@@ -1445,15 +1446,15 @@ export function Dashboard() {
               </div>
 
               <div className="flex gap-2">
-                <div className="relative">
+                <div className="relative flex-1 sm:flex-none">
                   <ActionButton 
                     variant="primary" 
-                    className="w-full" 
+                    className="w-full sm:w-auto" 
                     onClick={() => setInventoryExportOpen(!inventoryExportOpen)} 
                     theme={theme}
                   >
                     <FileDown className="h-4 w-4" />
-                    Export
+                    <span className="hidden sm:inline">Export</span>
                     <ChevronDown className={classNames('h-3.5 w-3.5 transition-transform', inventoryExportOpen && 'rotate-180')} />
                   </ActionButton>
                   
@@ -1524,17 +1525,18 @@ export function Dashboard() {
                 </div>
                 
                 <ActionButton
-                  className="w-full"
+                  className="w-full sm:w-auto flex-1 sm:flex-none"
                   onClick={() => setStatus(status === 'active' ? 'archived' : 'active')}
                   theme={theme}
                 >
-                  {status === 'active' ? 'Archived' : 'Active'}
+                  <span className="hidden sm:inline">{status === 'active' ? 'Archived' : 'Active'}</span>
+                  <Archive className="h-4 w-4 sm:hidden" />
                 </ActionButton>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 hidden grid-cols-12 gap-4 px-4 md:grid">
+          <div className="mt-5 sm:mt-6 hidden grid-cols-12 gap-3 sm:gap-4 px-3 sm:px-4 lg:grid">
             <div className={classNames(classes.TABLE_HEADER, 'col-span-2')}>SKU</div>
             <div className={classNames(classes.TABLE_HEADER, 'col-span-3')}>Name</div>
             <div className={classNames(classes.TABLE_HEADER, 'col-span-2')}>Category</div>
@@ -1543,7 +1545,7 @@ export function Dashboard() {
             <div className={classNames(classes.TABLE_HEADER, 'col-span-2 text-right')}>Actions</div>
           </div>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3">
             {inventoryLoading ? (
               <div className={classNames('py-10 text-center text-sm', classes.TEXT_SECONDARY)}>Loading inventory...</div>
             ) : inventoryList.length > 0 ? (
@@ -1554,29 +1556,32 @@ export function Dashboard() {
 
                 return (
                   <InventoryRow key={item._id} isLowStock={isLowStock} theme={theme}>
-                    <div className={classNames('col-span-12 text-sm font-semibold md:col-span-2', classes.TEXT_PRIMARY)}>
+                    <div className={classNames('sm:col-span-2 text-sm font-semibold', classes.TEXT_PRIMARY)}>
+                      <span className="text-xs uppercase tracking-wider opacity-60 lg:hidden">SKU: </span>
                       {item.sku}
                     </div>
 
-                    <div className={classNames('col-span-12 text-sm md:col-span-3', classes.TEXT_TERTIARY)}>
+                    <div className={classNames('sm:col-span-3 text-sm', classes.TEXT_TERTIARY)}>
+                      <span className="text-xs uppercase tracking-wider opacity-60 lg:hidden">Name: </span>
                       {item.name}
                     </div>
 
-                    <div className="col-span-6 md:col-span-2">
-                      <span className={classNames('inline-flex rounded-full border px-3 py-1 text-xs', classes.BORDER, classes.BG_TERTIARY, classes.TEXT_TERTIARY)}>
+                    <div className="sm:col-span-2">
+                      <span className={classNames('inline-flex rounded-full border px-2.5 sm:px-3 py-1 text-xs', classes.BORDER, classes.BG_TERTIARY, classes.TEXT_TERTIARY)}>
                         {item.category}
                       </span>
                     </div>
 
-                    <div className={classNames('col-span-6 text-sm md:col-span-2', classes.TEXT_SECONDARY)}>
+                    <div className={classNames('sm:col-span-2 text-sm', classes.TEXT_SECONDARY)}>
+                      <span className="text-xs uppercase tracking-wider opacity-60 lg:hidden">Bin: </span>
                       {item.bin_location}
                     </div>
 
-                    <div className="col-span-12 md:col-span-1">
+                    <div className="sm:col-span-1">
                       <div className="flex items-center gap-2">
                         <span
                           className={classNames(
-                            'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold tabular-nums',
+                            'inline-flex items-center gap-1 rounded-lg border px-2 sm:px-2.5 py-1 text-xs font-semibold tabular-nums',
                             isLowStock
                               ? isDark
                                 ? 'border-red-800 bg-red-950/50 text-red-400'
@@ -1596,36 +1601,36 @@ export function Dashboard() {
                       </div>
                     </div>
 
-                    <div className="col-span-12 flex items-center justify-end gap-1.5 md:col-span-2">
+                    <div className="sm:col-span-2 flex flex-wrap items-center justify-start sm:justify-end gap-1 sm:gap-1.5 mt-2 sm:mt-0">
                       {status === 'active' ? (
                         <>
                           <ActionButton 
                             onClick={() => handleMoveStock({ id: item._id, direction: 'IN' })} 
                             theme={theme}
-                            className="!px-2 !py-1.5 !text-xs !rounded-lg"
+                            className="!px-1.5 sm:!px-2 !py-1.5 !text-xs !rounded-lg"
                             title="Stock In"
                           >
-                            <ArrowUp className="h-3.5 w-3.5" />
+                            <ArrowUp className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                           </ActionButton>
 
                           <ActionButton 
                             onClick={() => handleMoveStock({ id: item._id, direction: 'OUT' })} 
                             theme={theme}
-                            className="!px-2 !py-1.5 !text-xs !rounded-lg"
+                            className="!px-1.5 sm:!px-2 !py-1.5 !text-xs !rounded-lg"
                             title="Stock Out"
                           >
-                            <ArrowDown className="h-3.5 w-3.5" />
+                            <ArrowDown className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                           </ActionButton>
 
                           <ActionButton
                             variant="primary"
                             onClick={() => handleMoveStock({ id: item._id, direction: 'SALE' })}
                             theme={theme}
-                            className="!px-2.5 !py-1.5 !text-xs !rounded-lg"
+                            className="!px-1.5 sm:!px-2.5 !py-1.5 !text-xs !rounded-lg"
                             title="Record Sale"
                           >
-                            <ShoppingCart className="h-3.5 w-3.5" />
-                            <span className="ml-1">SALE</span>
+                            <ShoppingCart className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                            <span className="ml-0.5 sm:ml-1 hidden sm:inline">SALE</span>
                           </ActionButton>
 
                           <ActionButton
@@ -1647,10 +1652,10 @@ export function Dashboard() {
                               }
                             }}
                             theme={theme}
-                            className="!px-2 !py-1.5 !text-xs !rounded-lg"
+                            className="!px-1.5 sm:!px-2 !py-1.5 !text-xs !rounded-lg"
                             title="Archive Item"
                           >
-                            <Archive className="h-3.5 w-3.5" />
+                            <Archive className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                           </ActionButton>
                         </>
                       ) : (
@@ -1676,11 +1681,11 @@ export function Dashboard() {
                               }
                             }}
                             theme={theme}
-                            className="!px-2.5 !py-1.5 !text-xs !rounded-lg"
+                            className="!px-2 sm:!px-2.5 !py-1.5 !text-xs !rounded-lg"
                             title="Restore Item"
                           >
-                            <Undo2 className="h-3.5 w-3.5" />
-                            <span className="ml-1">Restore</span>
+                            <Undo2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                            <span className="ml-0.5 sm:ml-1 hidden sm:inline">Restore</span>
                           </ActionButton>
 
                           {canManage && (
@@ -1703,10 +1708,10 @@ export function Dashboard() {
                                 }
                               }}
                               theme={theme}
-                              className="!px-2 !py-1.5 !text-xs !rounded-lg"
+                              className="!px-1.5 sm:!px-2 !py-1.5 !text-xs !rounded-lg"
                               title="Delete Permanently"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                             </ActionButton>
                           )}
                         </>
