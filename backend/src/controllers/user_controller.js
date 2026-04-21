@@ -13,13 +13,27 @@ const { AppError } = require('../utils/app_error');
 const { env } = require('../config/env');
 const { ROLE_WEIGHTS } = require('../middleware/auth');
 
-const BCRYPT_ROUNDS = 10;
-
 /**
  * Check if a target user is a protected System Owner.
  */
 function isProtected(email) {
   return env.SYSTEM_OWNER_EMAILS.includes(String(email || '').toLowerCase().trim());
+}
+
+function validatePassword(password) {
+  if (!password || password.length < 8) {
+    throw new AppError('Password must be at least 8 characters long.', 400, 'VALIDATION_ERROR');
+  }
+  if (!/[A-Z]/.test(password)) {
+    throw new AppError('Password must contain at least one uppercase letter.', 400, 'VALIDATION_ERROR');
+  }
+  if (!/[a-z]/.test(password)) {
+    throw new AppError('Password must contain at least one lowercase letter.', 400, 'VALIDATION_ERROR');
+  }
+  if (!/[0-9]/.test(password)) {
+    throw new AppError('Password must contain at least one number.', 400, 'VALIDATION_ERROR');
+  }
+  return true;
 }
 
 /**
@@ -75,6 +89,8 @@ async function createUser(req, res, next) {
       return next(new AppError('Missing required fields.', 400, 'VALIDATION_ERROR'));
     }
 
+    validatePassword(password);
+
     // Hierarchy Check: 
     // 1. Cannot create a role strictly higher than your own.
     if (ROLE_WEIGHTS[role] > req.user.roleWeight) {
@@ -92,7 +108,7 @@ async function createUser(req, res, next) {
     const { data: existing } = await supabase.from('users').select('id').eq('email', email.toLowerCase()).single();
     if (existing) return next(new AppError('User already exists.', 409, 'CONFLICT'));
 
-    const password_hash = await bcrypt.hash(String(password), BCRYPT_ROUNDS);
+    const password_hash = await bcrypt.hash(String(password), env.BCRYPT_SALT_ROUNDS);
 
     const { data: newUser, error } = await supabase.from('users').insert({
       email: email.toLowerCase(),
@@ -237,7 +253,8 @@ async function updateProfile(req, res, next) {
     if (email) updates.email = email.toLowerCase().trim();
     
     if (password) {
-      updates.password_hash = await bcrypt.hash(String(password), BCRYPT_ROUNDS);
+      validatePassword(password);
+      updates.password_hash = await bcrypt.hash(String(password), env.BCRYPT_SALT_ROUNDS);
     }
     
     if (Object.keys(updates).length > 0) {

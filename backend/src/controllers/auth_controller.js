@@ -16,10 +16,24 @@ const { sendMail } = require('../services/mailer_service');
 const { env } = require('../config/env');
 const { ROLE_WEIGHTS } = require('../middleware/auth');
 
-const BCRYPT_ROUNDS = 10;
-
 function safeLowerEmail(email) {
   return String(email || '').toLowerCase().trim();
+}
+
+function validatePassword(password) {
+  if (!password || password.length < 8) {
+    throw new AppError('Password must be at least 8 characters long.', 400, 'VALIDATION_ERROR');
+  }
+  if (!/[A-Z]/.test(password)) {
+    throw new AppError('Password must contain at least one uppercase letter.', 400, 'VALIDATION_ERROR');
+  }
+  if (!/[a-z]/.test(password)) {
+    throw new AppError('Password must contain at least one lowercase letter.', 400, 'VALIDATION_ERROR');
+  }
+  if (!/[0-9]/.test(password)) {
+    throw new AppError('Password must contain at least one number.', 400, 'VALIDATION_ERROR');
+  }
+  return true;
 }
 
 async function login(req, res, next) {
@@ -82,6 +96,8 @@ async function changePassword(req, res, next) {
       return next(new AppError('Current and new passwords required.', 400, 'VALIDATION_ERROR'));
     }
 
+    validatePassword(new_password);
+
     const supabase = getDb();
     const { data: user, error } = await supabase
       .from('users')
@@ -94,7 +110,7 @@ async function changePassword(req, res, next) {
     const ok = await bcrypt.compare(String(current_password), user.password_hash);
     if (!ok) return next(new AppError('Current password incorrect.', 401, 'UNAUTHORIZED'));
 
-    const hash = await bcrypt.hash(String(new_password), BCRYPT_ROUNDS);
+    const hash = await bcrypt.hash(String(new_password), env.BCRYPT_SALT_ROUNDS);
     
     await supabase.from('users').update({ password_hash: hash }).eq('id', req.user.id);
 
@@ -150,6 +166,8 @@ async function resetPassword(req, res, next) {
     const { token, new_password } = req.body || {};
     if (!token || !new_password) return next(new AppError('Token and password required.', 400, 'VALIDATION_ERROR'));
 
+    validatePassword(new_password);
+
     let payload;
     try {
       payload = jwt.verify(token, env.JWT_SECRET);
@@ -158,7 +176,7 @@ async function resetPassword(req, res, next) {
       return next(new AppError('Invalid or expired reset token.', 400, 'INVALID_TOKEN'));
     }
 
-    const hash = await bcrypt.hash(String(new_password), BCRYPT_ROUNDS);
+    const hash = await bcrypt.hash(String(new_password), env.BCRYPT_SALT_ROUNDS);
     
     const supabase = getDb();
     const { data: user, error } = await supabase

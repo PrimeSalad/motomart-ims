@@ -23,7 +23,12 @@ const env = {
   // JWT
   JWT_SECRET:
     process.env.JWT_SECRET ||
-    'CHANGE_THIS_SECRET',
+    (() => {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('JWT_SECRET must be set in production');
+      }
+      return 'CHANGE_THIS_SECRET';
+    })(),
 
   JWT_EXPIRES_IN:
     process.env.JWT_EXPIRES_IN ||
@@ -50,7 +55,14 @@ const env = {
   // 🔴 IMPORTANT FIX
   // bcrypt salt rounds
   BCRYPT_SALT_ROUNDS:
-    Number(process.env.BCRYPT_SALT_ROUNDS || 10),
+    Number(process.env.BCRYPT_SALT_ROUNDS || 12),
+
+  // Rate limiting
+  RATE_LIMIT_WINDOW_MS:
+    Number(process.env.RATE_LIMIT_WINDOW_MS || 60000),
+
+  RATE_LIMIT_MAX:
+    Number(process.env.RATE_LIMIT_MAX || 120),
 
 };
 

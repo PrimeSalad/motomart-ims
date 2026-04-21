@@ -8,6 +8,8 @@
 'use strict';
 
 const express = require('express');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const { env } = require('./config/env');
 const { logger } = require('./utils/logger');
@@ -49,58 +51,40 @@ const activityRouter = activityRoutes;
 
 const app = express();
 
-/* JSON */
-app.use(express.json());
+/* Security Headers */
+app.use(helmet({
+  contentSecurityPolicy: false, // Allow frontend to load resources
+  crossOriginEmbedderPolicy: false
+}));
+
+/* Rate Limiting */
+const limiter = rateLimit({
+  windowMs: Number(env.RATE_LIMIT_WINDOW_MS) || 60000,
+  max: Number(env.RATE_LIMIT_MAX) || 120,
+  message: { ok: false, error: { code: 'RATE_LIMIT', message: 'Too many requests' } },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', limiter);
+
+/* JSON with size limit */
+app.use(express.json({ limit: '10mb' }));
 
 /* Activity Logging (Global) */
 app.use(activityLogger);
 
-/* HARD CORS FIX */
-const allowedOrigins = String(env.CORS_ORIGIN || 'http://localhost:5173')
-  .split(',')
-  .map(x => x.trim());
-
+/* SIMPLIFIED CORS - Allow localhost:5173 */
 app.use((req, res, next) => {
-
-  const origin = req.headers.origin;
-
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization'
-  );
-
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET,POST,PUT,PATCH,DELETE,OPTIONS'
-  );
-
-  if (!origin) {
-    if (req.method === 'OPTIONS')
-      return res.sendStatus(204);
-
-    return next();
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
   }
-
-  if (allowedOrigins.includes(origin)) {
-
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      origin
-    );
-
-    if (req.method === 'OPTIONS')
-      return res.sendStatus(204);
-
-    return next();
-  }
-
-  if (req.method === 'OPTIONS')
-    return res.sendStatus(204);
-
-  return res.status(403).json({
-    ok:false
-  });
-
+  
+  next();
 });
 
 
