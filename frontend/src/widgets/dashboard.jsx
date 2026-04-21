@@ -1758,7 +1758,7 @@ export function Dashboard() {
             <input
               className={classNames(classes.INPUT, 'mt-2')}
               name="name"
-              placeholder="Carbon Weave Helmet"
+              placeholder="Motorcycle Helmet"
               required
             />
           </label>
