@@ -81,78 +81,24 @@ Sapat na ito para sa development at small projects
 
 ### Step 7: I-copy at I-paste ang Database Schema
 
-1. I-copy ang BUONG code na ito:
-
+1. **IMPORTANTE:** Bago i-run, i-open muna ang file na `docs/COMPLETE_DATABASE_SCHEMA.sql`
+2. Hanapin ang line 177-178 at palitan ng iyong email at pangalan:
 ```sql
--- ============================================
--- MOTOMART IMS DATABASE SCHEMA
--- I-copy at i-paste lang ito sa SQL Editor
--- ============================================
-
--- 1. USERS TABLE (Para sa mga users ng system)
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE NOT NULL,
-  full_name TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('staff', 'admin', 'super_admin')),
-  password_hash TEXT NOT NULL,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 2. INVENTORY TABLE (Para sa mga items/products)
-CREATE TABLE inventory (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  sku TEXT UNIQUE NOT NULL,
-  name TEXT NOT NULL,
-  category TEXT,
-  brand TEXT,
-  model TEXT,
-  quantity INTEGER DEFAULT 0,
-  unit_price DECIMAL(10,2),
-  location TEXT,
-  is_archived BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 3. ACTIVITY LOGS TABLE (Para sa audit trail)
-CREATE TABLE activity_logs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id),
-  action TEXT NOT NULL,
-  metadata JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 4. INDEXES (Para mas mabilis ang queries)
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_inventory_sku ON inventory(sku);
-CREATE INDEX idx_inventory_category ON inventory(category);
-CREATE INDEX idx_activity_logs_user_id ON activity_logs(user_id);
-CREATE INDEX idx_activity_logs_created_at ON activity_logs(created_at);
-
--- 5. ROW LEVEL SECURITY (Para sa security)
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inventory ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
-
--- 6. POLICIES (Pahintulutan ang backend na mag-access)
-CREATE POLICY "Service role can do everything on users" ON users
-  FOR ALL USING (true);
-
-CREATE POLICY "Service role can do everything on inventory" ON inventory
-  FOR ALL USING (true);
-
-CREATE POLICY "Service role can do everything on activity_logs" ON activity_logs
-  FOR ALL USING (true);
+'g.elpielandoy@gmail.com',  -- ⬅️ PALITAN MO ITO ng iyong email
+'Gene Elpie Landoy',         -- ⬅️ PALITAN MO ITO ng iyong pangalan
 ```
 
-2. **I-paste** sa SQL Editor (yung malaking white box)
-3. Click ang **"Run"** button (green button sa baba) o press **Ctrl+Enter**
-4. Dapat makita mo ang message: **"Success. No rows returned"**
+3. I-copy ang BUONG contents ng `COMPLETE_DATABASE_SCHEMA.sql`
+4. **I-paste** sa SQL Editor (yung malaking white box)
+5. Click ang **"Run"** button (green button sa baba) o press **Ctrl+Enter**
+6. Dapat makita mo ang message: **"Success"**
+
+Ang schema na ito ay mag-create ng 5 tables:
+- `users` - Para sa user accounts
+- `inventory_items` - Para sa inventory/products
+- `item_compatibilities` - Para sa vehicle compatibility
+- `inventory_audit_logs` - Para sa inventory history
+- `system_activity_logs` - Para sa system activity tracking
 
 ### Step 8: I-verify na Na-create ang Tables
 

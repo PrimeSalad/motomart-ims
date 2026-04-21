@@ -29,54 +29,18 @@ cd ..
 
 1. Go to [supabase.com](https://supabase.com) and create a new project
 2. Wait for the database to be ready (~2 minutes)
-3. Go to SQL Editor and run this schema:
+3. Go to SQL Editor and run the COMPLETE schema:
+   - Open the file: `docs/COMPLETE_DATABASE_SCHEMA.sql`
+   - Copy the ENTIRE contents
+   - Paste into Supabase SQL Editor
+   - Click "Run" or press Ctrl+Enter
 
-```sql
--- Users table
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE NOT NULL,
-  full_name TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('staff', 'admin', 'super_admin')),
-  password_hash TEXT NOT NULL,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Inventory table
-CREATE TABLE inventory (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  sku TEXT UNIQUE NOT NULL,
-  name TEXT NOT NULL,
-  category TEXT,
-  brand TEXT,
-  model TEXT,
-  quantity INTEGER DEFAULT 0,
-  unit_price DECIMAL(10,2),
-  location TEXT,
-  is_archived BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Activity logs table
-CREATE TABLE activity_logs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id),
-  action TEXT NOT NULL,
-  metadata JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Indexes for performance
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_inventory_sku ON inventory(sku);
-CREATE INDEX idx_inventory_category ON inventory(category);
-CREATE INDEX idx_activity_logs_user_id ON activity_logs(user_id);
-CREATE INDEX idx_activity_logs_created_at ON activity_logs(created_at);
-```
+The schema will create these tables:
+- `users` - User accounts and authentication
+- `inventory_items` - Product inventory
+- `item_compatibilities` - Vehicle compatibility data
+- `inventory_audit_logs` - Inventory change history
+- `system_activity_logs` - System-wide activity tracking
 
 4. Get your credentials:
    - Go to Settings → API
@@ -121,20 +85,15 @@ openssl rand -base64 32
 
 ## Step 4: Create Admin User
 
-Run this SQL in Supabase SQL Editor to create your first admin:
+The admin user is automatically created when you run the complete schema in Step 2.
 
-```sql
-INSERT INTO users (email, full_name, role, password_hash, is_active)
-VALUES (
-  'your-email@example.com',  -- Change this to your email
-  'Admin User',               -- Change this to your name
-  'super_admin',
-  '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYIeWEgEn4i', -- Password: Admin#1234
-  true
-);
-```
+**IMPORTANT**: Edit the email and name in `COMPLETE_DATABASE_SCHEMA.sql` before running it!
 
-**Important**: You'll change this password after first login!
+Default credentials:
+- Email: (the one you set in the schema)
+- Password: `Admin#1234`
+
+**You MUST change this password after first login!**
 
 ## Step 5: Configure Frontend
 
