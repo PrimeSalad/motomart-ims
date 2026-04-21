@@ -59,15 +59,15 @@ const FONT_PRECONNECT_TWO_ID = 'dashboard-google-fonts-preconnect-2';
 // Theme-aware classes - MASTERPIECE EDITION
 const getThemeClasses = (isDark) => ({
   LAYOUT_CONTAINER: isDark 
-    ? 'min-h-screen bg-stone-950 text-stone-100' 
-    : 'min-h-screen bg-red-50 text-stone-900',
-  PAGE_WRAPPER: 'max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8',
+    ? 'min-h-screen bg-stone-950 text-stone-100 overflow-x-hidden' 
+    : 'min-h-screen bg-red-50 text-stone-900 overflow-x-hidden',
+  PAGE_WRAPPER: 'max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 w-full overflow-x-hidden',
   CARD: isDark
     ? 'rounded-3xl border border-red-900/30 bg-stone-900'
     : 'rounded-3xl border border-red-100 bg-white',
   INPUT: isDark
-    ? 'w-full rounded-2xl border border-red-900/40 bg-stone-800 px-4 py-3 text-sm text-stone-100 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-900/40 placeholder:text-stone-500'
-    : 'w-full rounded-2xl border border-red-200 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 placeholder:text-stone-400',
+    ? 'w-full max-w-full rounded-2xl border border-red-900/40 bg-stone-800 px-4 py-3 text-sm text-stone-100 outline-none transition focus:border-red-500 focus:ring-2 focus:ring-red-900/40 placeholder:text-stone-500'
+    : 'w-full max-w-full rounded-2xl border border-red-200 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100 placeholder:text-stone-400',
   BUTTON_BASE: 'inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60',
   BUTTON_PRIMARY: isDark
     ? 'bg-red-700 text-white hover:bg-red-600'
@@ -192,7 +192,7 @@ function ActionButton({
 
 function Card({ children, className = '', theme }) {
   const classes = getThemeClasses(theme === 'dark');
-  return <div className={classNames(classes.CARD, 'p-4 sm:p-5 lg:p-6', className)}>{children}</div>;
+  return <div className={classNames(classes.CARD, 'p-4 sm:p-5 lg:p-6 w-full overflow-hidden', className)}>{children}</div>;
 }
 
 function MetricCard({ icon: Icon, label, value, helper, theme }) {
@@ -257,7 +257,7 @@ function InventoryRow({ children, isLowStock = false, theme }) {
   return (
     <div
       className={classNames(
-        'grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 rounded-2xl border px-3 sm:px-4 py-3 sm:py-4 transition-all duration-200',
+        'grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 lg:gap-4 rounded-2xl border px-3 sm:px-4 py-3 sm:py-4 transition-all duration-200 w-full overflow-hidden',
         isLowStock
           ? isDark
             ? 'border-red-900/50 bg-red-950/40 hover:bg-red-950/60'
@@ -1001,7 +1001,7 @@ export function Dashboard() {
           </div>
         </nav>
 
-        <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
           <MetricCard
             icon={Wrench}
             label="Parts"
@@ -1032,7 +1032,7 @@ export function Dashboard() {
           />
         </div>
 
-        <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
+        <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3 w-full">
           <Card className="lg:col-span-2" theme={theme}>
             <SectionHeading
               label="Analytics"
@@ -1046,14 +1046,14 @@ export function Dashboard() {
               }
             />
 
-            <div className="mt-4 sm:mt-5 h-56 sm:h-72">
+            <div className="mt-4 sm:mt-5 h-56 sm:h-72 w-full overflow-hidden">
               {analyticsLoading ? (
                 <div className={classNames('flex h-full items-center justify-center text-sm', classes.TEXT_SECONDARY)}>
                   Loading chart...
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={analytics?.revenueTrends || []}>
+                  <AreaChart data={analytics?.revenueTrends || []} margin={{ left: -20, right: 10, top: 5, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#57534e' : '#e7e5e4'} />
                     <XAxis dataKey="date" tick={{ fill: isDark ? '#a8a29e' : '#78716c', fontSize: 12 }} />
                     <YAxis tick={{ fill: isDark ? '#a8a29e' : '#78716c', fontSize: 12 }} />
@@ -1081,14 +1081,14 @@ export function Dashboard() {
 
           <Card theme={theme}>
             <SectionHeading label="Ratio" title="Stock-to-Sales" theme={theme} />
-            <div className="mt-4 sm:mt-5 h-56 sm:h-72">
+            <div className="mt-4 sm:mt-5 h-56 sm:h-72 w-full overflow-hidden">
               {analyticsLoading ? (
                 <div className={classNames('flex h-full items-center justify-center text-sm', classes.TEXT_SECONDARY)}>
                   Loading chart...
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={analytics?.stockToSalesRatio || []}>
+                  <BarChart data={analytics?.stockToSalesRatio || []} margin={{ left: -20, right: 10, top: 5, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#57534e' : '#e7e5e4'} />
                     <XAxis dataKey="category" tick={{ fill: isDark ? '#a8a29e' : '#78716c', fontSize: 12 }} />
                     <YAxis tick={{ fill: isDark ? '#a8a29e' : '#78716c', fontSize: 12 }} />
@@ -1114,7 +1114,7 @@ export function Dashboard() {
           </Card>
         </div>
 
-        <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
+        <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3 w-full">
           <Card className="lg:col-span-2" theme={theme}>
             <SectionHeading
               label="Daily Sales Log"
@@ -1271,7 +1271,7 @@ export function Dashboard() {
           </Card>
         </div>
 
-        <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
+        <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3 w-full">
           <Card className="lg:col-span-2" theme={theme}>
             <SectionHeading
               label="Smart Suggestions"
@@ -1286,7 +1286,7 @@ export function Dashboard() {
             />
 
             <form
-              className="mt-4 sm:mt-5 grid grid-cols-1 gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4"
+              className="mt-4 sm:mt-5 grid grid-cols-1 gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-4 w-full"
               onSubmit={handleCompatibilitySubmit}
             >
               <input
@@ -1318,7 +1318,7 @@ export function Dashboard() {
               </ActionButton>
             </form>
 
-            <div className="mt-4 sm:mt-5 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
+            <div className="mt-4 sm:mt-5 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 w-full">
               <div className={classNames('rounded-2xl border p-4', classes.BORDER, classes.BG_SECONDARY)}>
                 <div className={classNames('text-sm font-semibold', classes.TEXT_PRIMARY)}>Bike</div>
                 <div className={classNames('mt-1 text-sm', classes.TEXT_SECONDARY)}>Input reference for AI suggestions.</div>
@@ -1418,7 +1418,7 @@ export function Dashboard() {
             }
           />
 
-          <div className="mt-4 sm:mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="mt-4 sm:mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between w-full">
             <div className="grid w-full grid-cols-1 gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:max-w-3xl">
               <div className="relative">
                 <Search className={classNames('pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2', classes.TEXT_SECONDARY)} />
@@ -1556,32 +1556,32 @@ export function Dashboard() {
 
                 return (
                   <InventoryRow key={item._id} isLowStock={isLowStock} theme={theme}>
-                    <div className={classNames('sm:col-span-2 text-sm font-semibold', classes.TEXT_PRIMARY)}>
+                    <div className={classNames('sm:col-span-2 text-sm font-semibold break-all', classes.TEXT_PRIMARY)}>
                       <span className="text-xs uppercase tracking-wider opacity-60 lg:hidden">SKU: </span>
                       {item.sku}
                     </div>
 
-                    <div className={classNames('sm:col-span-3 text-sm', classes.TEXT_TERTIARY)}>
+                    <div className={classNames('sm:col-span-3 text-sm truncate', classes.TEXT_TERTIARY)}>
                       <span className="text-xs uppercase tracking-wider opacity-60 lg:hidden">Name: </span>
                       {item.name}
                     </div>
 
                     <div className="sm:col-span-2">
-                      <span className={classNames('inline-flex rounded-full border px-2.5 sm:px-3 py-1 text-xs', classes.BORDER, classes.BG_TERTIARY, classes.TEXT_TERTIARY)}>
+                      <span className={classNames('inline-flex rounded-full border px-2.5 sm:px-3 py-1 text-xs truncate max-w-full', classes.BORDER, classes.BG_TERTIARY, classes.TEXT_TERTIARY)}>
                         {item.category}
                       </span>
                     </div>
 
-                    <div className={classNames('sm:col-span-2 text-sm', classes.TEXT_SECONDARY)}>
+                    <div className={classNames('sm:col-span-2 text-sm truncate', classes.TEXT_SECONDARY)}>
                       <span className="text-xs uppercase tracking-wider opacity-60 lg:hidden">Bin: </span>
                       {item.bin_location}
                     </div>
 
                     <div className="sm:col-span-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span
                           className={classNames(
-                            'inline-flex items-center gap-1 rounded-lg border px-2 sm:px-2.5 py-1 text-xs font-semibold tabular-nums',
+                            'inline-flex items-center gap-1 rounded-lg border px-2 sm:px-2.5 py-1 text-xs font-semibold tabular-nums whitespace-nowrap',
                             isLowStock
                               ? isDark
                                 ? 'border-red-800 bg-red-950/50 text-red-400'
@@ -1594,7 +1594,7 @@ export function Dashboard() {
                           {currentQuantity} / {thresholdQuantity}
                         </span>
                         {isLowStock ? (
-                          <span className={classNames('flex h-5 w-5 items-center justify-center rounded-full', isDark ? 'bg-red-900/50' : 'bg-red-100')}>
+                          <span className={classNames('flex h-5 w-5 items-center justify-center rounded-full flex-shrink-0', isDark ? 'bg-red-900/50' : 'bg-red-100')}>
                             <span className={classNames('h-2 w-2 rounded-full', isDark ? 'bg-red-500' : 'bg-red-600')} />
                           </span>
                         ) : null}

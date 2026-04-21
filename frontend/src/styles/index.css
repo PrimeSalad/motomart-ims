@@ -13,6 +13,16 @@
   color-scheme: dark;
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(220, 38, 38, 0.5) rgba(255, 255, 255, 0.05);
