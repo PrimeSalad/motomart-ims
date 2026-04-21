@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/main.jsx
  * Version: 1.0.1
  * Purpose: React entry (Router + QueryClient).

@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/controllers/activity_controller.js
  * Version: 1.2.0
  * Purpose: System & Inventory Activity Log retrieval.

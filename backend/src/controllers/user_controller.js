@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/controllers/user_controller.js
  * Version: 1.0.0
  * Purpose: User Management (CRUD) with RBAC Safety Locks.

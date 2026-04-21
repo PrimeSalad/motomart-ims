@@ -1,4 +1,4 @@
-# Deployment Guide - Carbon & Crimson IMS
+# Deployment Guide - MotoMart IMS
 
 This guide covers deploying the frontend to Vercel and the backend to Render.
 
@@ -62,7 +62,7 @@ This guide covers deploying the frontend to Vercel and the backend to Render.
 2. Click "New +" → "Web Service"
 3. Connect your repository
 4. Configure:
-   - **Name**: carbon-crimson-ims-backend
+   - **Name**: motomart-ims-backend
    - **Root Directory**: `backend`
    - **Environment**: Node
    - **Build Command**: `npm install`

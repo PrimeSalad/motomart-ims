@@ -1,4 +1,4 @@
-# Quick Start Guide - Carbon & Crimson IMS
+# Quick Start Guide - MotoMart IMS
 
 Get your inventory management system running in 5 minutes!
 

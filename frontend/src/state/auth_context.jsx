@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/state/auth_context.jsx
  * Version: 1.1.0
  * Purpose: Auth state (token + user) with persistence (remember me supported).

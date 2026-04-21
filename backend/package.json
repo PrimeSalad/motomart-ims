@@ -1,8 +1,8 @@
 {
-  "name": "carbon-crimson-ims-backend",
+  "name": "motomart-ims-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Carbon & Crimson IMS Backend (Node/Express/Mongo)",
+  "description": "MotoMart IMS Backend (Node/Express/Mongo)",
   "main": "server.js",
   "scripts": {
     "dev": "node --watch server.js",

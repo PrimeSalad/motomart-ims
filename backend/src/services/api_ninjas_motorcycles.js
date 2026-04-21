@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/services/api_ninjas_motorcycles.js
  * Version: 1.1.0
  * Purpose: API Ninjas Motorcycles API wrapper.

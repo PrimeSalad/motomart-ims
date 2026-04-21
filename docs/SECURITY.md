@@ -1,8 +1,8 @@
-# Security Documentation - Carbon & Crimson IMS
+# Security Documentation - MotoMart IMS
 
 ## Overview
 
-This document outlines the security measures implemented in the Carbon & Crimson Inventory Management System.
+This document outlines the security measures implemented in the MotoMart Inventory Management System.
 
 ## Security Features Implemented
 

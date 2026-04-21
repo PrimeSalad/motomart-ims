@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/utils/logger.js
  * Version: 1.0.0
  * Purpose: Minimal logger wrapper (stdout friendly for Render/Docker).

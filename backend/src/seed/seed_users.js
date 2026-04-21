@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/seed/seed_users.js
  * Version: 2.0.0
  * Purpose: Seed default users safely (Supabase).

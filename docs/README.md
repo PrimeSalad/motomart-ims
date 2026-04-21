@@ -1,4 +1,4 @@
-# Carbon & Crimson IMS Documentation
+# MotoMart IMS Documentation
 
 Lahat ng documentation para sa Inventory Management System.
 

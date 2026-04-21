@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/utils/app_error.js
  * Version: 1.0.0
  * Purpose: Typed application errors for consistent HTTP responses.

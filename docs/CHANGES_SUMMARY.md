@@ -1,7 +1,7 @@
 # Security Improvements & Deployment Setup - Summary
 
 ## Overview
-This document summarizes all security improvements and deployment configurations added to the Carbon & Crimson IMS.
+This document summarizes all security improvements and deployment configurations added to the MotoMart IMS.
 
 ## Security Improvements Made
 

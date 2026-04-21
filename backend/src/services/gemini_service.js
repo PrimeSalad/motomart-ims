@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/services/gemini_service.js
  * Version: 2.5.1
  * Purpose: Gemini AI parts suggestions BASED ONLY on DB inventory (whitelist) + fail-safe.

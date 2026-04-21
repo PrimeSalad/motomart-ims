@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/services/jwt_service.js
  * Version: 1.0.0
  * Purpose: JWT token issuance and verification helpers.

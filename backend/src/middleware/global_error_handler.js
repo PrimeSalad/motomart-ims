@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/middleware/global_error_handler.js
  * Version: 1.0.0
  * Purpose: Global error handler (single response shape).

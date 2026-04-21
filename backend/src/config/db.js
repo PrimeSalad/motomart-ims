@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/config/db.js
  * Version: 2.0.0
  * Purpose: Supabase connection helper.

@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/repositories/inventory_repo.js
  * Version: 3.0.0
  * Purpose: Inventory read helpers for AI suggestions (Supabase PostgreSQL).

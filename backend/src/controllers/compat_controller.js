@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/controllers/compat_controller.js
  * Version: 2.2.0
  * Purpose: Smart Suggestions API (Gemini-only). No DB matching.

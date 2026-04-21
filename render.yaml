@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: carbon-crimson-ims-backend
+    name: motomart-ims-backend
     env: node
     region: oregon
     plan: free

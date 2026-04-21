@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/hooks/use_system.js
  * Version: 1.0.0
  * Purpose: System management hook (Users & Activity Logs).

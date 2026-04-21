@@ -1,4 +1,4 @@
-# Carbon & Crimson IMS - Inventory Management System
+# MotoMart IMS - Inventory Management System
 
 A secure, modern inventory management system built with React, Node.js, Express, and Supabase PostgreSQL. Features role-based access control, comprehensive audit logging, and a beautiful dark-themed UI.
 
@@ -17,7 +17,7 @@ A secure, modern inventory management system built with React, Node.js, Express,
 - 📊 Real-time analytics and reporting
 - 🔍 Advanced search and filtering
 - 📱 Responsive design for all devices
-- 🌙 Beautiful dark-themed UI with Carbon & Crimson design
+- 🌙 Beautiful dark-themed UI with MotoMart design
 
 ### Security Features
 - 🔐 JWT-based authentication

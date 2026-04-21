@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: scripts/reset_admin.js
  * Version: 2.0.0
  * Purpose: Force-reset admin password (Supabase).

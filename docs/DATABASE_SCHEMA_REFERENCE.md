@@ -1,6 +1,6 @@
 # Database Schema Reference
 
-Complete reference ng lahat ng tables at columns sa Carbon & Crimson IMS.
+Complete reference ng lahat ng tables at columns sa MotoMart IMS.
 
 ## Tables Overview
 

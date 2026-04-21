@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/middleware/activity_logger.js
  * Version: 1.0.0
  * Purpose: Global mutation interceptor for audit logging.

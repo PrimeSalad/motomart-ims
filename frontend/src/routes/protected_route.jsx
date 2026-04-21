@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/routes/protected_route.jsx
  * Version: 1.0.0
  * Purpose: Protected routes using auth token.

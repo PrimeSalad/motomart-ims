@@ -1,5 +1,5 @@
 -- ============================================
--- CARBON & CRIMSON IMS - COMPLETE DATABASE SCHEMA
+-- MotoMart IMS - COMPLETE DATABASE SCHEMA
 -- Run this ENTIRE script in Supabase SQL Editor
 -- ============================================
 

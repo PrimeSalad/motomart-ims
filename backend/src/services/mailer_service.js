@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/services/mailer_service.js
  * Version: 1.1.0
  * Purpose: Send transactional emails (password reset/change) via SMTP.

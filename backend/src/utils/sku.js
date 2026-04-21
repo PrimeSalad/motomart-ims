@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/utils/sku.js
  * Version: 1.0.0
  * Purpose: SKU normalization + generator.

@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/middleware/auth.js
  * Version: 2.1.0
  * Purpose: JWT auth + Hierarchical RBAC + System Owner identification.

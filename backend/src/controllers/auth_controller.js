@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/controllers/auth_controller.js
  * Version: 2.0.0
  * Purpose: Auth endpoints (JWT) using Supabase PostgreSQL.

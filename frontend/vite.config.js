@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: vite.config.js
  * Version: 1.0.0
  * Purpose: Vite config.

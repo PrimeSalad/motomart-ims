@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/middleware/not_found.js
  * Version: 1.0.0
  * Purpose: 404 handler.

@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/lib/api_client.js
  * Version: 1.0.0
  * Purpose: Axios client with auth header.

@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/routes/user_routes.js
  * Version: 1.0.0
  * Purpose: User management routes (Admin/Super Admin only).

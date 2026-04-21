@@ -1,5 +1,5 @@
 # -----------------------------
-# Carbon & Crimson IMS - Frontend Dockerfile
+# MotoMart IMS - Frontend Dockerfile
 # File: Dockerfile
 # Version: 1.0.0
 # Purpose: Dev-friendly container for Vite (local).

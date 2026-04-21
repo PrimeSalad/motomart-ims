@@ -1,5 +1,5 @@
 /*
- * Carbon & Crimson IMS
+ * MotoMart IMS
  * File: src/components/error_boundary.jsx
  * Version: 1.0.0
  * Purpose: Prevent blank screen by catching render errors.
