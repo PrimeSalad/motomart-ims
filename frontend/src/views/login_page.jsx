@@ -1,6 +1,6 @@
 /*
  * File: src/views/login_page.jsx
- * Description: Ultra-minimalist login page
+ * Description: Ultra-minimalist login page with Poppins and Questrial fonts
  * Version: 4.0.0
  */
 
@@ -12,7 +12,21 @@ import { useAuth } from '../state/auth_context';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function useLoginFonts() {
+  useEffect(() => {
+    if (document.getElementById('login-fonts')) return;
+    
+    const link = document.createElement('link');
+    link.id = 'login-fonts';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Questrial&display=swap';
+    document.head.appendChild(link);
+  }, []);
+}
+
 export function LoginPage() {
+  useLoginFonts();
+  
   const { setAuth, token } = useAuth();
   const navigate = useNavigate();
   const api = useMemo(() => createApiClient({ token: null }), []);
@@ -71,7 +85,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4" style={{ fontFamily: "'Poppins', sans-serif" }}>
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex justify-center mb-8">
@@ -83,7 +97,7 @@ export function LoginPage() {
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl font-semibold text-white text-center mb-8">
+        <h1 className="text-2xl font-semibold text-white text-center mb-8" style={{ fontFamily: "'Questrial', sans-serif" }}>
           MotoMart IMS
         </h1>
 
